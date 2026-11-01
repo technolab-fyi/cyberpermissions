@@ -1,0 +1,1269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Permission Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: sticky station rail on the left (top tabs on phones), one station visible at a time, terminal panels stay dark in both themes. */
+:root{
+  --bg:#f5f7f8; --panel:#ffffff; --ink:#1d2a30; --muted:#5b6b72; --line:#d9e1e4; --soft:#eaf0f2;
+  --accent:#0f6e74;
+  --own:#0f7f86; --own-bg:#dcf1f2;
+  --grp:#4a5fa8; --grp-bg:#e3e7f7;
+  --oth:#b4532a; --oth-bg:#f8e6dc;
+  --type:#7a868b; --type-bg:#eceff0;
+  --ok:#2e7d4f; --ok-bg:#e1f2e7; --bad:#b3372f; --bad-bg:#f8e1df;
+  --term:#14212a; --term-ink:#d9e6ea; --term-dim:#8aa1aa; --term-prompt:#5fd0c6; --term-err:#ff9b86; --term-dir:#9db4ff;
+  --display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10181c; --panel:#172227; --ink:#e3ecef; --muted:#9aabb2; --line:#2a3a41; --soft:#1d2b31;
+  --accent:#5cc6c9;
+  --own:#4fc7cd; --own-bg:#173a3d; --grp:#9aaaf0; --grp-bg:#263052; --oth:#f0946a; --oth-bg:#45281c;
+  --type:#9aa7ac; --type-bg:#26333a; --ok:#6fd194; --ok-bg:#163826; --bad:#ff8a80; --bad-bg:#4a1f1c;
+  --term:#0b1419; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#10181c; --panel:#172227; --ink:#e3ecef; --muted:#9aabb2; --line:#2a3a41; --soft:#1d2b31;
+  --accent:#5cc6c9;
+  --own:#4fc7cd; --own-bg:#173a3d; --grp:#9aaaf0; --grp-bg:#263052; --oth:#f0946a; --oth-bg:#45281c;
+  --type:#9aa7ac; --type-bg:#26333a; --ok:#6fd194; --ok-bg:#163826; --bad:#ff8a80; --bad-bg:#4a1f1c;
+  --term:#0b1419; color-scheme:dark;}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 var(--body);}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 60px;display:grid;grid-template-columns:230px minmax(0,1fr);gap:36px}
+header.top{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 24px;border-bottom:2px solid var(--ink);padding-bottom:12px}
+header.top h1{font:700 2rem/1.1 var(--display);margin:0;letter-spacing:-.01em}
+header.top h1 .perm{white-space:nowrap;display:inline-block;font:600 .62em var(--mono);vertical-align:middle;margin-left:.4em;letter-spacing:0}
+header.top p{margin:0;color:var(--muted);font-size:.92rem}
+code,kbd,.mono{font-family:var(--mono);font-size:.92em}
+code{background:var(--soft);padding:.05em .35em;border-radius:4px}
+
+/* rail */
+nav.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);align-self:start;display:flex;flex-direction:column;gap:2px}
+nav.rail a{display:grid;grid-template-columns:2.1em 1fr auto;align-items:center;gap:6px;padding:7px 10px;border-radius:6px;color:var(--ink);text-decoration:none;font-size:.95rem}
+nav.rail a .k{font:600 .8rem var(--mono);color:var(--muted)}
+nav.rail a:hover{background:var(--soft)}
+nav.rail a.on{background:var(--ink);color:var(--bg)}
+nav.rail a.on .k{color:var(--bg);opacity:.75}
+nav.rail .done{font:600 .7rem var(--mono);color:var(--ok)}
+nav.rail a.on .done{color:var(--bg)}
+nav.rail .lbl{font:600 .72rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:12px 10px 4px}
+
+main{min-width:0}
+section.st{display:none}
+section.st.on{display:block}
+.eyebrow{font:600 .75rem var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin:0 0 4px}
+h2{font:700 2.1rem/1.1 var(--display);margin:0 0 10px;text-wrap:balance}
+h3{font:600 1.3rem/1.2 var(--display);margin:34px 0 8px;text-wrap:balance}
+p,li{max-width:68ch}
+.lede{font-size:1.08rem;color:var(--muted);margin-top:0}
+.ced{border-left:3px solid var(--line);padding:4px 0 4px 14px;color:var(--muted);font-size:.93rem;margin:14px 0}
+.ced b{color:var(--ink);font-family:var(--mono);font-size:.82rem;font-weight:600}
+
+/* permission strip */
+.strip{display:inline-flex;font:600 1.5rem var(--mono);border-radius:6px;overflow:hidden;border:1px solid var(--line)}
+.strip span{padding:4px 10px;transition:opacity .2s}
+.strip .t{background:var(--type-bg);color:var(--type)}
+.strip .u{background:var(--own-bg);color:var(--own)}
+.strip .g{background:var(--grp-bg);color:var(--grp)}
+.strip .o{background:var(--oth-bg);color:var(--oth)}
+.strip .x{background:var(--soft);color:var(--muted)}
+.strip.lit span{opacity:.28}
+.strip.lit span.hot{opacity:1;outline:2px solid currentColor;outline-offset:-2px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.88rem;margin-top:8px;color:var(--muted)}
+.legend i{display:inline-block;width:.8em;height:.8em;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.c-u{color:var(--own)} .c-g{color:var(--grp)} .c-o{color:var(--oth)} .c-t{color:var(--type)}
+
+.tool{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;margin:18px 0}
+.tool h4{margin:0 0 10px;font:600 .78rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button{font:inherit;cursor:pointer}
+.btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:6px 12px;border-radius:6px;font-size:.92rem}
+.btn:hover{border-color:var(--ink)}
+.btn.sel{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--bg);font-weight:600}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.explain{margin-top:12px;font-size:.98rem}
+.lsline{font:500 .95rem var(--mono);white-space:pre;overflow-x:auto;background:var(--soft);padding:8px 10px;border-radius:6px;margin:8px 0}
+
+.cast{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:14px 0}
+.cast div{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--panel)}
+.cast b{font-family:var(--display);font-size:1.1rem}
+.cast small{display:block;color:var(--muted);font-size:.85rem;line-height:1.4}
+
+table.t{border-collapse:collapse;font-size:.95rem;margin:10px 0}
+table.t th,table.t td{border:1px solid var(--line);padding:6px 12px;text-align:center}
+table.t th{background:var(--soft);font-weight:600}
+table.t td.l,table.t th.l{text-align:left}
+.tw{overflow-x:auto}
+.tnum{font-variant-numeric:tabular-nums}
+
+/* bits */
+.bits{display:flex;flex-wrap:wrap;gap:6px}
+.bit{display:flex;flex-direction:column;align-items:center;gap:3px}
+.bit small{font:500 .75rem var(--mono);color:var(--muted)}
+.bit button{width:46px;height:52px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--muted);font:600 1.5rem var(--mono)}
+.bit button.on{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.big{font:600 1.4rem var(--mono);margin-top:12px;overflow-wrap:anywhere}
+
+/* builder */
+.pb{display:grid;grid-template-columns:auto repeat(3,auto) auto;gap:6px 8px;align-items:center;justify-content:start}
+.pb .who{font-weight:600;padding-right:8px}
+.pb button{width:48px;height:40px;border-radius:6px;border:1px solid var(--line);background:var(--panel);font:600 1.1rem var(--mono);color:var(--muted)}
+.pb button.on.u{background:var(--own-bg);color:var(--own);border-color:var(--own)}
+.pb button.on.g{background:var(--grp-bg);color:var(--grp);border-color:var(--grp)}
+.pb button.on.o{background:var(--oth-bg);color:var(--oth);border-color:var(--oth)}
+.pb .sum{font:600 1.1rem var(--mono);padding-left:10px}
+.out{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;margin-top:14px;font-size:.98rem}
+.out dt{color:var(--muted)} .out dd{margin:0;font-family:var(--mono);font-weight:600;overflow-wrap:anywhere}
+
+/* quick check */
+.qc{border:1px dashed var(--line);border-radius:10px;padding:14px 16px;margin:18px 0;background:var(--panel)}
+.qc .q{font-weight:600;margin:0 0 8px}
+.qc .tag{font:600 .7rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.qc .opts{display:flex;flex-wrap:wrap;gap:6px}
+.qc .fb{margin-top:8px;font-size:.95rem;min-height:1.5em}
+.qc .btn.right{background:var(--ok-bg);border-color:var(--ok);color:var(--ok)}
+.qc .btn.wrong{background:var(--bad-bg);border-color:var(--bad);color:var(--bad)}
+
+/* problems */
+.probs{margin:30px 0 10px;border-top:2px solid var(--ink);padding-top:14px}
+.probs .head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px}
+.probs .head h3{margin:0}
+.probs .head span{font-size:.9rem;color:var(--muted)}
+.probs ol{list-style:none;padding:0;margin:12px 0 0;display:flex;flex-direction:column;gap:12px}
+.probs li{display:grid;grid-template-columns:3.2em minmax(0,1fr);gap:10px;max-width:none}
+.probs li .n{font:600 .95rem var(--mono);color:var(--bg);background:var(--ink);border-radius:5px;text-align:center;height:1.8em;line-height:1.8em}
+.probs li .lsline{margin:6px 0 0}
+.probs li .ch{display:block;font-family:var(--mono);font-size:.92rem;margin-top:4px}
+
+/* terminal */
+.term{background:var(--term);color:var(--term-ink);border-radius:10px;font:14px/1.5 var(--mono);overflow:hidden;border:1px solid var(--line)}
+.term .bar{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 12px;background:rgba(255,255,255,.05);color:var(--term-dim);font-size:.8rem}
+.term .bar button{background:transparent;border:1px solid rgba(255,255,255,.2);color:var(--term-ink);border-radius:5px;padding:2px 10px;font:500 .8rem var(--mono)}
+.term .bar button:hover{border-color:var(--term-prompt)}
+.term .scr{padding:10px 14px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;max-height:420px}
+.term.big .scr{height:440px;max-height:none}
+.term .p{color:var(--term-prompt)}
+.term .e{color:var(--term-err)}
+.term .d{color:var(--term-dir)}
+.term .n{color:var(--term-dim)}
+.term .okk{color:#8fe3a8}
+.term .inrow{display:flex;white-space:pre}
+.term input{flex:1;min-width:0;background:transparent;border:0;color:var(--term-ink);font:inherit;outline:none;padding:0;caret-color:var(--term-prompt)}
+.caret{display:inline-block;width:.6em;background:var(--term-prompt);animation:bl 1s steps(1) infinite}
+@keyframes bl{50%{opacity:0}}
+
+/* lab */
+.lab{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:18px;align-items:start;margin-top:14px}
+.missions{display:flex;flex-direction:column;gap:8px}
+.mi{border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:10px 12px}
+.mi .top{display:flex;gap:10px;align-items:baseline}
+.mi .id{font:600 .85rem var(--mono);color:var(--muted)}
+.mi .ti{font-weight:600}
+.mi p{margin:4px 0 0;font-size:.93rem}
+.mi .code{margin-top:6px;font:600 .95rem var(--mono);color:var(--ok);background:var(--ok-bg);border-radius:5px;padding:3px 8px;display:inline-block}
+.mi.done{border-color:var(--ok)}
+.mi details{margin-top:4px;font-size:.88rem;color:var(--muted)}
+.mi summary{cursor:pointer}
+.who-now{font-size:.9rem;color:var(--muted);margin:6px 0}
+.cheat{font-size:.88rem;color:var(--muted);margin-top:10px;line-height:1.7}
+.cheat code{font-size:.85rem}
+
+.note{background:var(--soft);border-radius:8px;padding:12px 14px;font-size:.95rem;margin:14px 0}
+.next{display:flex;justify-content:space-between;gap:10px;margin-top:36px;flex-wrap:wrap}
+
+@media (max-width:860px){
+  .wrap{grid-template-columns:minmax(0,1fr);gap:16px}
+  nav.rail{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;flex-direction:row;overflow-x:auto;background:var(--bg);padding:6px 0;border-bottom:1px solid var(--line)}
+  nav.rail .lbl{display:none}
+  nav.rail a{grid-template-columns:auto auto;white-space:nowrap;padding:6px 10px}
+  nav.rail a .t2,nav.rail .done{display:none}
+  body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+  .lab{grid-template-columns:minmax(0,1fr)}
+  h2{font-size:1.7rem}
+  .strip{font-size:1.15rem}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* v2 additions */
+nav.rail .lbl.day{color:var(--accent)}
+.practice{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:16px;align-items:start;margin:16px 0 8px}
+.practice .term .scr{height:330px;max-height:none}
+.tasks{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.tasks h4{margin:0 0 4px;font:600 .78rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.tasks .cnt{font-size:.88rem;color:var(--muted);margin-bottom:8px}
+.tasks ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.tasks li{display:grid;grid-template-columns:1.5em minmax(0,1fr);gap:6px;font-size:.93rem;line-height:1.45;max-width:none}
+.tasks li .box{width:1.2em;height:1.2em;border:1.5px solid var(--line);border-radius:4px;margin-top:.15em;display:grid;place-items:center;font-size:.8em;color:var(--bg)}
+.tasks li.done .box{background:var(--ok);border-color:var(--ok)}
+.tasks li.done .tx{color:var(--muted)}
+.tasks li.cur .box{border-color:var(--accent)}
+.tasks li code{font-size:.86rem;white-space:nowrap}
+.tasks .sheet{display:block;font:600 .72rem var(--mono);color:var(--accent);margin-top:2px}
+.prompt-anatomy{display:flex;flex-wrap:wrap;gap:0;font:600 1.25rem var(--mono);background:var(--term);color:var(--term-ink);border-radius:8px;padding:14px 16px 10px;overflow-x:auto}
+.prompt-anatomy span{display:inline-flex;flex-direction:column;align-items:center}
+.prompt-anatomy small{font:500 .7rem var(--body);color:var(--term-dim);margin-top:6px;white-space:nowrap;padding:0 4px}
+.cmdtbl td.mono,.cmdtbl td code{white-space:nowrap}
+.dayplan td:first-child{font-weight:600;white-space:nowrap}
+.lsparts{display:flex;flex-wrap:wrap;gap:6px 10px;font:600 1rem var(--mono);margin:10px 0}
+.lsparts span{display:inline-flex;flex-direction:column;align-items:flex-start;background:var(--soft);border-radius:6px;padding:6px 8px}
+.lsparts small{font:500 .72rem var(--body);color:var(--muted);margin-top:2px}
+.callout{border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:6px;padding:10px 14px;margin:14px 0;background:var(--panel);font-size:.96rem}
+@media (max-width:860px){.practice{grid-template-columns:minmax(0,1fr)} .practice .term .scr{height:280px}}
+
+.whobar{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.whobar .wb-l{font:600 .72rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-right:4px}
+.wb{border:1px solid var(--line);border-radius:6px;padding:4px 10px;background:var(--panel);font-size:.88rem;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.wb small{color:var(--muted);font-size:.78rem}
+.wb.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.wb em{font:600 .68rem var(--mono);font-style:normal;color:var(--bg);background:var(--accent);border-radius:3px;padding:0 5px;text-transform:uppercase;letter-spacing:.06em}
+#labWho{margin-bottom:8px}
+.whotbl td{vertical-align:top}
+
+.tk-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px}
+.tk-head h4{margin:0}
+.tk-reset{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:5px;padding:2px 8px;font:500 .78rem var(--body)}
+.tk-reset:hover{color:var(--ink);border-color:var(--ink)}
+</style>
+<style>[hidden]{display:none!important} body{margin:0}</style>
+</head>
+<body>
+
+
+<div class="wrap">
+<header class="top">
+  <h1>Permission Lab <span class="perm"><span class="c-t">-</span><span class="c-u">rwx</span><span class="c-g">r-x</span><span class="c-o">---</span></span></h1>
+  <p>AP Cybersecurity 5.2.D · Configure access control settings on a Linux-based system</p>
+</header>
+
+<nav class="rail" id="rail" aria-label="Stations"></nav>
+
+<main id="main">
+
+<!-- START -->
+<section class="st on" id="start">
+  <p class="eyebrow">Start here</p>
+  <h2>Who gets in, and how do you change it?</h2>
+  <p class="lede">Every file on a Linux computer carries a short code that says who can read it, change it, or run it. Over the next five classes you'll learn to use a Linux terminal, read that code, connect it to the binary and octal you already know, and change it with <code>chmod</code>. You'll test every rule yourself by logging in as different people.</p>
+
+  <div class="note"><b>How to turn this in.</b> Grab your paper answer sheet. Every box with a dark number like <span class="mono" style="background:var(--ink);color:var(--bg);padding:0 6px;border-radius:4px">T1</span> goes on your sheet. Many answers come from what <b>your</b> terminal shows, so do the <b>Try it</b> steps, don't skip them. The <b>Quick check</b> boxes are practice only.</div>
+
+  <h3>Meet the people in this lab</h3>
+  <p>You'll switch between these four accounts to test who can get into what. The one fact to remember: <b>Maya and Leo are in group lab. Sam is not.</b> A Who's who bar above every practice terminal keeps this in front of you.</p>
+  <div class="cast">
+    <div><b class="c-u">maya</b><small>Robotics team captain. Owns most files. Groups: maya, <b>lab</b>. You start as Maya.</small></div>
+    <div><b class="c-g">leo</b><small>Robotics teammate. Owns draft.txt. Groups: leo, <b>lab</b>.</small></div>
+    <div><b class="c-o">sam</b><small>Not on the team. Groups: sam, students. For Maya's files, Sam counts as "others."</small></div>
+    <div><b>root</b><small>The IT administrator. Can do anything to any file.</small></div>
+  </div>
+
+  <h3>The plan</h3>
+  <div class="tw"><table class="t dayplan"><thead><tr><th class="l">Day</th><th class="l">Stations</th><th class="l">You'll be able to…</th><th>Sheet</th></tr></thead><tbody id="routeTable"></tbody></table></div>
+  <p style="color:var(--muted);font-size:.92rem">Finish early? Keep going to the next station. Fall behind? Pick up where you stopped next class. The site remembers which Try it steps you've finished on this computer.</p>
+  <div class="next"><span></span><a class="btn primary" href="#terminal">Start Station T →</a></div>
+</section>
+
+<!-- T TERMINAL -->
+<section class="st" id="terminal">
+  <p class="eyebrow">Station T · Day 1</p>
+  <h2>Meet the terminal</h2>
+  <p class="lede">If you've never used a terminal, you're in the right place. By the end of today you'll be able to find out who you are, where you are, what's around you, how to move between folders, and how to become a different user.</p>
+
+  <h3>What is a terminal?</h3>
+  <p>Most of the time you use a computer by clicking: icons, folders, menus. That's called a <b>graphical interface</b>. A <b>terminal</b> is a different way to control the same computer: you <b>type</b> an instruction (a <b>command</b>), press <kbd>Enter</kbd>, and the computer types back an answer. No mouse, no icons. The program reading your commands is called the <b>shell</b>; on most Linux computers it's called <code>bash</code>.</p>
+  <p>Everything you can click on, you can also do by typing. Here's how things you already know line up with terminal commands:</p>
+  <div class="tw"><table class="t"><thead><tr><th class="l">When you click…</th><th class="l">In the terminal you type…</th></tr></thead><tbody>
+    <tr><td class="l">Look at which account is logged in</td><td class="l"><code>whoami</code></td></tr>
+    <tr><td class="l">Look at the folder name at the top of a window</td><td class="l"><code>pwd</code></td></tr>
+    <tr><td class="l">Look at the files inside a folder window</td><td class="l"><code>ls</code></td></tr>
+    <tr><td class="l">Double-click a folder to open it</td><td class="l"><code>cd foldername</code></td></tr>
+    <tr><td class="l">Click the Back / Up arrow</td><td class="l"><code>cd ..</code></td></tr>
+    <tr><td class="l">Double-click a document to read it</td><td class="l"><code>cat filename</code></td></tr>
+    <tr><td class="l">Log out and log in as someone else</td><td class="l"><code>su username</code></td></tr>
+    <tr><td class="l">Right-click → Properties → Security / Permissions</td><td class="l"><code>ls -l</code> (Station P)</td></tr>
+  </tbody></table></div>
+
+  <h3>Why cybersecurity people live in the terminal</h3>
+  <ul>
+    <li>Most servers on the internet run Linux, and most have no screen or mouse. The terminal is the only way in.</li>
+    <li>One typed command can check or fix permissions on thousands of files at once.</li>
+    <li>Most security tools are terminal programs.</li>
+    <li>The AP exam expects you to read and write these commands.</li>
+  </ul>
+
+  <h3>How to type in the practice terminals</h3>
+  <ol>
+    <li><b>Click inside the black box.</b> A blinking bar (the <b>cursor</b>) shows where your typing goes.</li>
+    <li><b>Type the command exactly</b>, including spaces.</li>
+    <li><b>Press Enter.</b> Nothing happens until you do.</li>
+    <li><b>Read the answer.</b> It prints right under your command. Then a fresh prompt appears for the next one.</li>
+  </ol>
+  <div class="callout"><b>Getting an error is normal.</b> Professionals see errors all day. They mean "I didn't understand that" or "you're not allowed," never "you broke something." Nothing you type here can damage a real computer.
+  <ul style="margin:8px 0 0">
+    <li><code>command not found</code> → check spelling and capitals, then retype. Press <kbd>↑</kbd> to bring back what you typed and fix it.</li>
+    <li><code>No such file or directory</code> → the name is wrong. Type <code>ls</code> to see the real names.</li>
+    <li><code>Permission denied</code> → you typed it right, but the person you are isn't allowed. That's what this whole lab is about.</li>
+    <li>Lost? <code>whoami</code> tells you who you are. <code>pwd</code> tells you where you are.</li>
+  </ul></div>
+
+  <h3>Read the prompt</h3>
+  <p>Before you type anything, the terminal shows a <b>prompt</b>. It's not decoration. It tells you who you are and where you are, and it updates every time those change.</p>
+  <div class="prompt-anatomy" aria-label="Prompt maya@cyberlab:~/lab$ broken into parts">
+    <span><span style="color:var(--term-prompt)">maya</span><small>who you are</small></span>
+    <span><span class="n">@</span><small>"at"</small></span>
+    <span><span style="color:var(--term-prompt)">cyberlab</span><small>computer name</small></span>
+    <span><span class="n">:</span><small></small></span>
+    <span><span style="color:var(--term-dir)">~/lab</span><small>folder you're in</small></span>
+    <span><span>$</span><small>regular user</small></span>
+  </div>
+  <p>Read it as "Maya, at the computer named cyberlab, in the lab folder." If the last character is <code>#</code> instead of <code>$</code>, you're logged in as <b>root</b>, the all-powerful administrator.</p>
+
+  <h3>How a command is built</h3>
+  <div class="lsparts"><span>ls<small>command (the verb)</small></span><span>-l<small>option (how to do it)</small></span><span>report.txt<small>argument (what to do it to)</small></span></div>
+  <ul>
+    <li>Spaces matter: <code>ls -l</code> works, <code>ls-l</code> doesn't.</li>
+    <li>Capitals matter: <code>Notes.txt</code> and <code>notes.txt</code> are different, and <code>LS</code> isn't a command.</li>
+    <li>Options start with a dash. Some commands need an argument (<code>cat</code> needs to know which file); some don't (<code>whoami</code>).</li>
+  </ul>
+
+  <h3>Part 1 · Look around</h3>
+  <div class="tw"><table class="t cmdtbl"><thead><tr><th class="l">Command</th><th class="l">Stands for</th><th class="l">What it does</th></tr></thead><tbody>
+    <tr><td class="l"><code>whoami</code></td><td class="l">who am I</td><td class="l">prints the username you're logged in as</td></tr>
+    <tr><td class="l"><code>pwd</code></td><td class="l">print working directory</td><td class="l">prints the folder you're in right now</td></tr>
+    <tr><td class="l"><code>ls</code></td><td class="l">list</td><td class="l">lists the files and folders where you are (folders show in blue)</td></tr>
+    <tr><td class="l"><code>cat notes.txt</code></td><td class="l">concatenate</td><td class="l">prints what's inside a file</td></tr>
+    <tr><td class="l"><code>clear</code></td><td class="l"></td><td class="l">wipes the screen (nothing is deleted)</td></tr>
+  </tbody></table></div>
+  <p>Do the steps in order. Each one checks off when you do it. Write what you see on your sheet.</p>
+  <div class="practice" data-practice="t1"></div>
+
+  <h3>Part 2 · Move around</h3>
+  <p>Files live in folders (Linux calls them <b>directories</b>), and folders live inside other folders. A <b>path</b> is a folder's full address, written with slashes. You're working in <code>/home/lab</code>: the <code>lab</code> folder, inside <code>home</code>, inside the very top folder, <code>/</code>. Inside <code>lab</code> is one more folder, <code>robotics</code>.</p>
+  <div class="lsline">/                      ← top of everything
+└── home
+    └── lab            ← you start here  (/home/lab)
+        ├── notes.txt
+        ├── report.txt
+        ├── …
+        └── robotics   ← a folder inside lab  (/home/lab/robotics)
+            └── motor_test.py</div>
+  <div class="tw"><table class="t cmdtbl"><thead><tr><th class="l">Command</th><th class="l">Stands for</th><th class="l">What it does</th></tr></thead><tbody>
+    <tr><td class="l"><code>cd robotics</code></td><td class="l">change directory</td><td class="l">moves you <b>into</b> the robotics folder (like double-clicking it)</td></tr>
+    <tr><td class="l"><code>cd ..</code></td><td class="l">".." means "the folder above"</td><td class="l">moves you <b>up</b> one folder (like the Back button)</td></tr>
+  </tbody></table></div>
+  <p><code>cd</code> prints nothing when it works. Watch the <b>prompt</b> change instead, or check with <code>pwd</code>.</p>
+  <div class="practice" data-practice="t2"></div>
+
+  <h3>Part 3 · Who's who, and switching users</h3>
+  <p>Every person who uses a Linux computer has their own <b>account</b> (a username). Accounts are put into <b>groups</b> so a whole team can be given access at once, instead of one person at a time. On this computer the robotics team shares a group called <code>lab</code>.</p>
+  <div class="tw"><table class="t whotbl"><thead><tr><th class="l">Account</th><th class="l">Who they are</th><th class="l">Groups</th><th class="l">Owns</th></tr></thead><tbody>
+    <tr><td class="l"><b class="c-u">maya</b></td><td class="l">Robotics team captain. She set up the lab files.</td><td class="l"><code>maya</code>, <code>lab</code></td><td class="l">almost every file in the lab</td></tr>
+    <tr><td class="l"><b class="c-g">leo</b></td><td class="l">Robotics teammate</td><td class="l"><code>leo</code>, <code>lab</code></td><td class="l"><code>draft.txt</code></td></tr>
+    <tr><td class="l"><b class="c-o">sam</b></td><td class="l">A student who is <b>not</b> on the team</td><td class="l"><code>sam</code>, <code>students</code></td><td class="l">nothing here</td></tr>
+    <tr><td class="l"><b>root</b></td><td class="l">The school's IT administrator account</td><td class="l"><code>root</code></td><td class="l">can do anything to any file</td></tr>
+  </tbody></table></div>
+  <p>Each user is automatically in a group with their own name (Maya is in group <code>maya</code>). The group that matters in this lab is <code>lab</code>: <b>Maya and Leo are in it. Sam isn't.</b></p>
+
+  <h4 style="font:600 1.05rem var(--display);margin:18px 0 6px">Why would we switch users?</h4>
+  <p>Security testers don't just read the permission settings and hope they're right. They <b>try the door from the outside</b>. Switching users lets you sit in Sam's seat and see exactly what Sam can and can't do. That's how you prove a file is really protected.</p>
+  <div class="tw"><table class="t cmdtbl"><thead><tr><th class="l">Command</th><th class="l">What it does</th></tr></thead><tbody>
+    <tr><td class="l"><code>id</code></td><td class="l">shows who you are <b>and every group you're in</b></td></tr>
+    <tr><td class="l"><code>su leo</code></td><td class="l"><b>s</b>witch <b>u</b>ser: become Leo. The prompt changes to <code>leo@…</code></td></tr>
+    <tr><td class="l"><code>exit</code></td><td class="l">stop being Leo and go back to who you were</td></tr>
+  </tbody></table></div>
+  <p>You're only ever one person at a time. The <b>Who's who</b> bar above every practice terminal lights up whoever you are right now.</p>
+  <div class="practice" data-practice="t3"></div>
+
+  <div class="qc" data-ans="b"><span class="tag">Quick check</span>
+    <p class="q">The prompt says <code>leo@cyberlab:~/lab/robotics$</code>. Which is true?</p>
+    <div class="opts"><button class="btn" data-v="a">You're root, in the lab folder</button><button class="btn" data-v="b">You're Leo, in the robotics folder</button><button class="btn" data-v="c">You're Maya, looking at Leo's files</button></div>
+    <div class="fb" data-right="Right. Username first, then the folder. The $ means a regular user, not root." data-wrong="Not quite. Read it left to right: user @ computer : folder, then $ or #."></div></div>
+  <div class="qc" data-ans="a"><span class="tag">Quick check</span>
+    <p class="q">Which two accounts share the <code>lab</code> group?</p>
+    <div class="opts"><button class="btn" data-v="a">maya and leo</button><button class="btn" data-v="b">leo and sam</button><button class="btn" data-v="c">all three</button></div>
+    <div class="fb" data-right="Right. Sam is in students, not lab. That one fact explains most of what happens in Station P." data-wrong="Not quite. Run id as each person and compare their groups."></div></div>
+
+  <div class="probs" data-sec="T"></div>
+  <div class="next"><a class="btn" href="#start">← Start</a><a class="btn primary" href="#perms">Station P: Permissions in the terminal →</a></div>
+</section>
+
+<!-- P PERMS -->
+<section class="st" id="perms">
+  <p class="eyebrow">Station P · Day 2</p>
+  <h2>See permissions in the terminal</h2>
+  <p class="lede">In Station T, Part 3, Sam got "Permission denied" trying to enter <code>robotics</code>. Now you'll find out why. Add <code>-l</code> (long) to <code>ls</code> and every file shows its permissions.</p>
+  <div class="ced"><b>CED 5.2.D.4</b> To view the current permission settings for a file, use the command <code>ls -l</code>, which will show the current settings for the default entities.</div>
+
+  <div class="callout"><b>Who's who refresher.</b> <span class="c-u">maya</span> owns the lab files and is in group lab. <span class="c-g">leo</span> is in group lab. <span class="c-o">sam</span> is not in lab, so for Maya's files he's "others." <b>root</b> can do anything. Not sure who you are in a terminal? Type <code>whoami</code>; to see your groups, <code>id</code>.</div>
+
+  <h3>Parts of an <code>ls -l</code> line</h3>
+  <div class="lsparts">
+    <span><span><span class="c-t">-</span><span class="c-u">rw-</span><span class="c-g">r--</span><span class="c-o">---</span></span><small>permissions</small></span>
+    <span>1<small>links (ignore)</small></span>
+    <span class="c-u">maya<small>owner</small></span>
+    <span class="c-g">lab<small>group</small></span>
+    <span>2048<small>size (bytes)</small></span>
+    <span>Oct 30 14:02<small>last changed</small></span>
+    <span>report.txt<small>name</small></span>
+  </div>
+
+  <h3>Three kinds of access, always in the order r w x</h3>
+  <div class="tw"><table class="t"><thead><tr><th>Letter</th><th class="l">Name</th><th class="l">On a file…</th><th class="l">On a folder…</th></tr></thead><tbody>
+    <tr><td class="mono">r</td><td class="l">read</td><td class="l">view what's inside (<code>cat</code>)</td><td class="l">list what's in it (<code>ls</code>)</td></tr>
+    <tr><td class="mono">w</td><td class="l">write</td><td class="l">change it</td><td class="l">add or delete files in it</td></tr>
+    <tr><td class="mono">x</td><td class="l">execute</td><td class="l">run it as a program (<code>./scanner</code>)</td><td class="l">enter it (<code>cd</code>)</td></tr>
+  </tbody></table></div>
+  <p>A dash <code>-</code> means that permission is missing. <code>r-x</code> means read and execute, but no write.</p>
+
+  <h3>Three groups of people, always in the order owner, group, others</h3>
+  <p>The very first character is the type: <code>-</code> for a file, <code>d</code> for a directory. Then nine letters in three chunks.</p>
+  <div class="strip"><span class="t">-</span><span class="u">rw-</span><span class="g">r--</span><span class="o">---</span></div>
+  <div class="legend"><span><i style="background:var(--type)"></i>type</span><span><i style="background:var(--own)"></i>owner (maya)</span><span><i style="background:var(--grp)"></i>group (lab)</span><span><i style="background:var(--oth)"></i>others (everyone else)</span></div>
+  <div class="ced"><b>CED 5.2.D.2–3</b> Read, write, execute are abbreviated rwx; a - means that permission is absent. Permissions are set for the file owner, the file group, and all other users, always in that order, displayed with no spaces (e.g., rwxrwxrwx).</div>
+
+  <h3>The two-step check</h3>
+  <p><b>Step 1: find your chunk.</b> Are you the owner? Use the first chunk. If not, are you in the file's group? Use the middle chunk. Neither? Use the last chunk. <b>You only ever get one chunk.</b> (That's why <code>id</code> matters: it tells you your groups.)</p>
+  <p><b>Step 2: read it.</b> Each letter that's there is something you can do.</p>
+
+  <div class="tool" id="reader">
+    <h4>Practice the check: pick a file, then a person</h4>
+    <div class="row" id="rdFiles"></div>
+    <div class="lsline" id="rdLine"></div>
+    <div class="row" id="rdPeople"></div>
+    <div style="margin-top:12px" id="rdStrip"></div>
+    <div class="explain" id="rdExplain"></div>
+  </div>
+
+  <h3>Try it: predict, then test</h3>
+  <p>For each step, <b>predict first</b> (will it work?), then run it and see. Record results on your sheet (P2–P7).</p>
+  <div class="practice" data-practice="p1"></div>
+
+  <h3>What's that + at the end?</h3>
+  <p><code>budget.xlsx</code> shows <code>-rw-r-----+</code>. The <code>+</code> means someone gave extra permissions to a specific person beyond the normal three chunks. <code>ls -l</code> won't tell you who. <code>getfacl</code> (get file access control list) will. That's why Sam could read it in the last step even though he's "others."</p>
+  <div class="ced"><b>CED 5.2.D.4</b> If there is a + symbol at the end of the permissions, other permissions have been set for that file and they can be viewed with the <code>getfacl</code> command.</div>
+
+  <div class="qc" data-ans="c"><span class="tag">Quick check</span>
+    <p class="q">For <code>-rw-r----- maya lab notes.txt</code>, the principal isn't Maya and isn't in group lab. What happens when the principal runs <code>cat notes.txt</code>?</p>
+    <div class="opts"><button class="btn" data-v="a">It shows the file</button><button class="btn" data-v="b">It shows the file but can't save changes</button><button class="btn" data-v="c">Permission denied</button></div>
+    <div class="fb" data-right="Right. The principal is others, and the others chunk is ---." data-wrong="Not quite. Not owner, not in lab, so use the last chunk: ---."></div></div>
+
+  <div class="probs" data-sec="P"></div>
+  <div class="next"><a class="btn" href="#terminal">← Station T</a><a class="btn primary" href="#review">Station R: Number review →</a></div>
+</section>
+
+<!-- R REVIEW -->
+<section class="st" id="review">
+  <p class="eyebrow">Station R · Day 3</p>
+  <h2>Quick review: binary and octal</h2>
+  <p class="lede">You've already spent a day on each. This is a warm-up so the numbers are fresh before we connect them to permissions.</p>
+
+  <div class="tw"><table class="t tnum"><thead><tr><th class="l">System</th><th class="l">Digits</th><th class="l">Place values</th><th class="l">Example</th></tr></thead><tbody>
+    <tr><td class="l">Binary (base 2)</td><td class="l mono">0 1</td><td class="l">… 16 8 4 2 1</td><td class="l"><code>1101</code> = 8 + 4 + 1 = 13</td></tr>
+    <tr><td class="l">Octal (base 8)</td><td class="l mono">0–7</td><td class="l">… 64 8 1</td><td class="l"><code>25</code> = 2×8 + 5 = 21</td></tr>
+  </tbody></table></div>
+  <p><b>Decimal → binary:</b> take the biggest place value that fits, write 1, subtract, keep going. <b>Decimal → octal:</b> divide by 8; the answer is the 8s digit and the remainder is the 1s digit.</p>
+
+  <div class="tool">
+    <h4>Binary switches</h4>
+    <div class="bits" id="bits"></div>
+    <div class="big" id="bitOut"></div>
+  </div>
+  <div class="tool">
+    <h4>Octal counter</h4>
+    <div class="row"><button class="btn" id="ocDown" aria-label="Count down">− 1</button><button class="btn" id="ocUp" aria-label="Count up">+ 1</button><button class="btn" id="ocReset">Reset</button></div>
+    <dl class="out" id="ocOut"></dl>
+  </div>
+
+  <div class="qc" data-ans="b"><span class="tag">Quick check</span>
+    <p class="q">What's the biggest number 3 bits can hold, and what is it in octal?</p>
+    <div class="opts"><button class="btn" data-v="a">8, written 10</button><button class="btn" data-v="b">7, written 7</button><button class="btn" data-v="c">3, written 3</button></div>
+    <div class="fb" data-right="Right. 111 = 4 + 2 + 1 = 7, and 7 is the largest single octal digit. Hold onto that; it's the key to the next station." data-wrong="Not quite. 111 = 4 + 2 + 1."></div></div>
+
+  <div class="probs" data-sec="R"></div>
+  <div class="next"><a class="btn" href="#perms">← Station P</a><a class="btn primary" href="#bits-st">Station D: Connect to permissions →</a></div>
+</section>
+
+<!-- D CONNECT -->
+<section class="st" id="bits-st">
+  <p class="eyebrow">Station D · Day 3</p>
+  <h2>Connect it: permissions are bits</h2>
+  <p class="lede">Each chunk is three switches: r, w, x. On = 1, off = 0. Three bits make 0 through 7, which is exactly one octal digit. So the nine letters you saw in <code>ls -l</code> become three octal digits.</p>
+
+  <h3>r = 4, w = 2, x = 1 are just binary place values</h3>
+  <table class="t tnum"><thead><tr><th>Letter</th><th>r</th><th>w</th><th>x</th></tr></thead><tbody>
+    <tr><td>Place value</td><td>4</td><td>2</td><td>1</td></tr>
+    <tr><td><code>r-x</code> as bits</td><td>1</td><td>0</td><td>1</td></tr>
+  </tbody></table>
+  <p><code>r-x</code> → <code>101</code> → 4 + 0 + 1 = <b>5</b>. Add up the letters that are there. A dash adds 0.</p>
+
+  <div class="tw"><table class="t tnum"><thead><tr><th>Digit</th><th>Bits</th><th>Letters</th><th class="l">Means</th></tr></thead><tbody id="digitTable"></tbody></table></div>
+  <div class="ced"><b>CED 5.2.D.6</b> 0 = no permissions, 1 = execute, 2 = write, 4 = read. Therefore 3 sets write and execute, 5 sets read and execute, 6 sets read and write, and 7 sets read, write, and execute.</div>
+
+  <h3>Do it one chunk at a time</h3>
+  <table class="t tnum"><thead><tr><th class="l"></th><th class="c-u">owner</th><th class="c-g">group</th><th class="c-o">others</th></tr></thead><tbody>
+    <tr><td class="l">Letters</td><td class="mono c-u">rwx</td><td class="mono c-g">r-x</td><td class="mono c-o">---</td></tr>
+    <tr><td class="l">Bits</td><td class="mono">111</td><td class="mono">101</td><td class="mono">000</td></tr>
+    <tr><td class="l">Add</td><td>4+2+1</td><td>4+0+1</td><td>0</td></tr>
+    <tr><td class="l">Octal digit</td><td><b>7</b></td><td><b>5</b></td><td><b>0</b></td></tr>
+  </tbody></table>
+  <p><code>750</code> is not "seven hundred fifty." Read it as three separate digits: <b>7</b> for the owner, <b>5</b> for the group, <b>0</b> for others.</p>
+
+  <div class="tool">
+    <h4>Try it: click letters on and off</h4>
+    <div class="pb" id="pb"></div>
+    <dl class="out" id="pbOut"></dl>
+  </div>
+
+  <h3>Try it: translate real files</h3>
+  <p>Run <code>ls -l</code> and convert three of the files you see into numbers (D9 on your sheet).</p>
+  <div class="practice" data-practice="d1"></div>
+
+  <div class="qc" data-ans="b"><span class="tag">Quick check</span>
+    <p class="q">What is <code>rw-r--r--</code> as a number?</p>
+    <div class="opts"><button class="btn" data-v="a">622</button><button class="btn" data-v="b">644</button><button class="btn" data-v="c">755</button></div>
+    <div class="fb" data-right="Right. rw- = 4+2 = 6, r-- = 4, r-- = 4." data-wrong="Not quite. Do each chunk: rw- = 4+2, r-- = 4, r-- = 4."></div></div>
+
+  <div class="probs" data-sec="D"></div>
+  <div class="next"><a class="btn" href="#review">← Station R</a><a class="btn primary" href="#numeric">Station E: chmod with numbers →</a></div>
+</section>
+
+<!-- E NUMERIC -->
+<section class="st" id="numeric">
+  <p class="eyebrow">Station E · Day 4</p>
+  <h2>Change permissions with numbers</h2>
+  <p class="lede"><code>chmod</code> means "change mode." The numeric method sets all three chunks at once.</p>
+  <div class="lsline">chmod <span class="c-u">7</span><span class="c-g">5</span><span class="c-o">0</span> test</div>
+  <p>First digit = owner, second = group, third = others. The command above gives the owner read, write, and execute; the group read and execute; and everyone else nothing.</p>
+  <div class="ced"><b>CED 5.2.D.5–6</b> To modify permission settings use <code>chmod</code>, with the numeric or symbolic method. Numeric syntax is <code>chmod ### filename</code>. Examples: <code>chmod 750 test</code>; <code>chmod 543 test</code> (owner read and execute, group read only, others write and execute); <code>chmod 777 test</code> (everyone gets everything).</div>
+
+  <h3>Common patterns</h3>
+  <table class="t tnum"><thead><tr><th>Number</th><th>Letters</th><th class="l">Typical use</th></tr></thead><tbody>
+    <tr><td>600</td><td class="mono">rw-------</td><td class="l">Private file. Only the owner can see it.</td></tr>
+    <tr><td>640</td><td class="mono">rw-r-----</td><td class="l">Owner edits, team reads, outsiders blocked.</td></tr>
+    <tr><td>644</td><td class="mono">rw-r--r--</td><td class="l">Public file anyone can read, like a web page.</td></tr>
+    <tr><td>750</td><td class="mono">rwxr-x---</td><td class="l">Program or folder the team can use.</td></tr>
+    <tr><td>755</td><td class="mono">rwxr-xr-x</td><td class="l">Program anyone can run.</td></tr>
+    <tr><td style="color:var(--bad)">777</td><td class="mono" style="color:var(--bad)">rwxrwxrwx</td><td class="l">Almost always a mistake. Anyone can change it or replace it with something harmful.</td></tr>
+  </tbody></table>
+
+  <h3>Who is allowed to run chmod?</h3>
+  <p>Only the file's <b>owner</b> or <b>root</b>. Leo is in the group, but that doesn't let him change permissions. This is discretionary access control (DAC): the owner decides.</p>
+
+  <h3>Watch it first</h3>
+  <p>Maya's gradebook is wide open (777). Watch her lock it down to 640, then Sam tries to open it.</p>
+  <div class="demo" data-demo="numeric"></div>
+
+  <h3>Try it: lock it down and test it</h3>
+  <p>Now you do it. The habit to build: <b>check → change → check again → test as someone else.</b></p>
+  <div class="practice" data-practice="e1"></div>
+
+  <div class="qc" data-ans="a"><span class="tag">Quick check</span>
+    <p class="q">You want the owner to read and write, and nobody else to have any access. Which command?</p>
+    <div class="opts"><button class="btn" data-v="a">chmod 600 file</button><button class="btn" data-v="b">chmod 006 file</button><button class="btn" data-v="c">chmod 700 file</button></div>
+    <div class="fb" data-right="Right. 6 = rw- for the owner, 0 for group and others." data-wrong="Not quite. The first digit is the owner. Read + write = 4 + 2 = 6, and no execute."></div></div>
+
+  <div class="probs" data-sec="E"></div>
+  <div class="next"><a class="btn" href="#bits-st">← Station D</a><a class="btn primary" href="#symbolic">Station F: chmod with letters →</a></div>
+</section>
+
+<!-- F SYMBOLIC -->
+<section class="st" id="symbolic">
+  <p class="eyebrow">Station F · Day 4</p>
+  <h2>Change permissions with letters</h2>
+  <p class="lede">The symbolic method changes only what you name and leaves everything else alone. You don't need to know the current numbers.</p>
+  <div class="lsline">chmod <span class="c-g">who</span><b>+</b> or <b>−</b><span class="c-u">what</span> filename</div>
+  <div class="tw"><table class="t"><thead><tr><th>Who</th><th class="l"></th><th>Action</th><th class="l"></th><th>What</th><th class="l"></th></tr></thead><tbody>
+    <tr><td class="mono c-u">u</td><td class="l">user owner</td><td class="mono">+</td><td class="l">add</td><td class="mono">r</td><td class="l">read</td></tr>
+    <tr><td class="mono c-g">g</td><td class="l">group</td><td class="mono">-</td><td class="l">remove</td><td class="mono">w</td><td class="l">write</td></tr>
+    <tr><td class="mono c-o">o</td><td class="l">others</td><td></td><td></td><td class="mono">x</td><td class="l">execute</td></tr>
+    <tr><td class="mono">a</td><td class="l">all three</td><td></td><td></td><td></td><td></td></tr>
+  </tbody></table></div>
+  <div class="note"><b>Trap:</b> <code>o</code> stands for <b>others</b>, not owner. The owner is <code>u</code> for "user."</div>
+  <div class="ced"><b>CED 5.2.D.7</b> Syntax: <code>chmod entity +(or –) permission filename</code>. To add read and execute for the group and user owner of testfile: <code>chmod ug+rx testfile</code>. Entities and permissions can be combined in a single command.</div>
+
+  <table class="t"><thead><tr><th class="l">Command</th><th class="l">Does this</th></tr></thead><tbody>
+    <tr><td class="l mono">chmod g+w notes.txt</td><td class="l">group gets write</td></tr>
+    <tr><td class="l mono">chmod o-r notes.txt</td><td class="l">others lose read</td></tr>
+    <tr><td class="l mono">chmod a+x run.sh</td><td class="l">everyone gets execute</td></tr>
+    <tr><td class="l mono">chmod go-w file</td><td class="l">group and others lose write</td></tr>
+    <tr><td class="l mono">chmod g-w,o-rx file</td><td class="l">two changes in one command (comma, no spaces)</td></tr>
+  </tbody></table>
+
+  <h3>Watch it: same result, two ways</h3>
+  <div class="demo" data-demo="symbolic"></div>
+
+  <h3>Try it: change one piece at a time</h3>
+  <p>Run <code>ls -l</code> after every change so you can see exactly which chunk moved.</p>
+  <div class="practice" data-practice="f1"></div>
+
+  <div class="qc" data-ans="c"><span class="tag">Quick check</span>
+    <p class="q">A file is <code>rwxr-xr-x</code> (755). You run <code>chmod o-rx file</code>. What is it now?</p>
+    <div class="opts"><button class="btn" data-v="a">055</button><button class="btn" data-v="b">700</button><button class="btn" data-v="c">750</button></div>
+    <div class="fb" data-right="Right. Only the others chunk changed: r-x became ---." data-wrong="Not quite. o means others. Only the last chunk changes."></div></div>
+
+  <div class="probs" data-sec="F"></div>
+  <div class="next"><a class="btn" href="#numeric">← Station E</a><a class="btn primary" href="#lab">Station G: Missions →</a></div>
+</section>
+
+<!-- G LAB -->
+<section class="st" id="lab">
+  <p class="eyebrow">Station G · Day 5</p>
+  <h2>Missions</h2>
+  <p class="lede">No step-by-step this time. Each mission tells you the goal, and you figure out the commands. Finish one and you'll get a code word for your sheet. Stuck? Open the hint.</p>
+  <div class="lab">
+    <div>
+      <div class="whobar" id="labWho"></div>
+      <div class="term big" id="labTerm"></div>
+      <div class="cheat"><b>Commands:</b> <code>ls -l</code> <code>cat</code> <code>chmod 640 file</code> <code>chmod g+w file</code> <code>getfacl</code> <code>su leo</code> <code>exit</code> <code>whoami</code> <code>id</code> <code>cd</code> <code>pwd</code> <code>./scanner</code> <code>echo hi &gt;&gt; file</code> <code>clear</code> <code>help</code></div>
+    </div>
+    <div>
+      <div class="who-now" id="progress"></div>
+      <div class="missions" id="missions"></div>
+    </div>
+  </div>
+  <div class="probs" data-sec="G"></div>
+  <div class="next"><a class="btn" href="#symbolic">← Station F</a><a class="btn primary" href="#risk">Station H: Spot the risk →</a></div>
+</section>
+
+<!-- H RISK -->
+<section class="st" id="risk">
+  <p class="eyebrow">Station H · Day 5</p>
+  <h2>Spot the risk</h2>
+  <p class="lede">Think like a security analyst. For each file, decide who should have access (least privilege), what's wrong, and the command that fixes it.</p>
+  <div class="note">Ask three questions for every file: <b>Who really needs this?</b> <b>What do they need to do with it?</b> <b>Does anyone have more than that?</b></div>
+  <div class="probs" data-sec="H"></div>
+  <div class="next"><a class="btn" href="#lab">← Station G</a><span class="note" style="margin:0">Done? Check that every box on your sheet is filled in, then turn it in.</span></div>
+</section>
+
+</main>
+</div>
+
+<script>
+/* ====================== STATIONS & ROUTING ====================== */
+const STATIONS=[
+  {id:'start',k:'·',t:'Start here',day:''},
+  {id:'terminal',k:'T',t:'Meet the terminal',day:'Day 1'},
+  {id:'perms',k:'P',t:'Permissions in the terminal',day:'Day 2'},
+  {id:'review',k:'R',t:'Number review',day:'Day 3'},
+  {id:'bits-st',k:'D',t:'Connect to permissions',day:'Day 3'},
+  {id:'numeric',k:'E',t:'chmod numbers',day:'Day 4'},
+  {id:'symbolic',k:'F',t:'chmod letters',day:'Day 4'},
+  {id:'lab',k:'G',t:'Missions',day:'Day 5'},
+  {id:'risk',k:'H',t:'Spot the risk',day:'Day 5'}
+];
+const DAYPLAN=[
+  ['Day 1','<a href="#terminal">T</a>','Use a terminal for the first time: whoami, pwd, ls, cat, cd, id, su, exit. Learn who\'s who and which groups they\'re in.','T1–T10'],
+  ['Day 2','<a href="#perms">P</a>','Read permissions with ls -l, predict and then test them as Maya, Leo, and Sam, and find extra permissions with getfacl.','P1–P8'],
+  ['Day 3','<a href="#review">R</a> · <a href="#bits-st">D</a>','Quick binary and octal review, then turn rwx letters into numbers like 750.','R1–R6, D1–D9'],
+  ['Day 4','<a href="#numeric">E</a> · <a href="#symbolic">F</a>','Change permissions with chmod numbers and letters, and prove each change worked.','E1–E8, F1–F9'],
+  ['Day 5','<a href="#lab">G</a> · <a href="#risk">H</a>','Solve missions without step-by-step help and fix risky permissions using least privilege.','G1–G8, H1–H6']
+];
+const rail=document.getElementById('rail');
+let lastDay=null, railHTML='';
+STATIONS.forEach(s=>{
+  if(s.day&&s.day!==lastDay){railHTML+=`<div class="lbl day">${s.day}</div>`;lastDay=s.day;}
+  railHTML+=`<a href="#${s.id}" data-id="${s.id}"><span class="k">${s.k}</span><span class="t2">${s.t}</span><span class="done" data-done="${s.id}"></span></a>`;
+});
+rail.innerHTML=railHTML;
+document.getElementById('routeTable').innerHTML=DAYPLAN.map(r=>`<tr><td class="l">${r[0]}</td><td class="l">${r[1]}</td><td class="l">${r[2]}</td><td class="mono">${r[3]}</td></tr>`).join('');
+let labApi=null;
+let current='';
+function hashId(){ let h=''; try{h=location.hash||'';}catch(e){} return h.slice(1); }
+function route(){ show(hashId()); }
+function show(id){
+  if(!STATIONS.find(s=>s.id===id)) id='start';
+  if(id===current) return; current=id;
+  document.querySelectorAll('section.st').forEach(s=>s.classList.toggle('on',s.id===id));
+  rail.querySelectorAll('a').forEach(a=>{a.classList.toggle('on',a.dataset.id===id); if(a.dataset.id===id && window.innerWidth<=860) a.scrollIntoView({inline:'center',block:'nearest'});});
+  window.scrollTo(0,0);
+  if(id==='lab'&&labApi) setTimeout(()=>labApi.focus(),50);
+}
+window.addEventListener('hashchange',route);
+/* Station links work even where the page can't change its own address (exports, previews, LMS embeds). */
+document.addEventListener('click',e=>{
+  const a=e.target.closest('a[href^="#"]'); if(!a) return;
+  const id=a.getAttribute('href').slice(1);
+  if(!STATIONS.find(s=>s.id===id)) return;
+  e.preventDefault(); show(id);
+  try{ if(hashId()!==id) history.replaceState(null,'','#'+id); }catch(err){}
+});
+
+/* ====================== PROBLEMS (answer sheet) ====================== */
+const L=s=>`<div class="lsline">${s}</div>`;
+const PROBS={
+ T:[
+  ['T1','What did <code>whoami</code> print?'],
+  ['T2','What did <code>pwd</code> print?'],
+  ['T3','What did <code>ls</code> list? Write every name.'],
+  ['T4','What message did you get when you typed <code>whomai</code>? What should you do when you see that message?'],
+  ['T5','After <code>cd robotics</code>, what did <code>pwd</code> print? How did the prompt change?'],
+  ['T6','In your own words, what does <code>cd ..</code> do?'],
+  ['T7','What groups did <code>id</code> show for Maya?'],
+  ['T8','What groups did <code>id</code> show for Leo? For Sam? Which group do Maya and Leo share that Sam is not in?'],
+  ['T9','As Sam, what message did you get when you tried <code>cd robotics</code>?'],
+  ['T10','Label each part of this prompt: <code>sam</code>, <code>cyberlab</code>, <code>~/lab</code>, <code>$</code>. What would a <code>#</code> at the end mean?'+L('sam@cyberlab:~/lab$')]
+ ],
+ P:[
+  ['P1','Label these six parts of the line: permissions, owner, group, size, date, name.'+L('-rw-r----- 1 maya lab 2048 Oct 30 14:02 report.txt')],
+  ['P2','From <b>your</b> <code>ls -l</code>: write the permission strings for <code>grades.xlsx</code> and <code>scanner</code>.'],
+  ['P3','Leo ran <code>cat report.txt</code>. What did you predict? What happened? Which chunk decided it?'],
+  ['P4','Leo ran <code>echo hello &gt;&gt; report.txt</code>. Write the exact message and explain why.'],
+  ['P5','Sam ran <code>cat report.txt</code>. Write the exact message and explain why.'],
+  ['P6','Sam ran <code>./scanner</code>. Did it run? Which chunk let him?'],
+  ['P7','Sam could read <code>budget.xlsx</code> even though its others chunk is <code>---</code>. What did <code>getfacl</code> show that explains this?'],
+  ['P8','<code>robotics</code> shows <code>drwxr-x---</code>. What does the <code>d</code> mean, and why was Sam denied when he tried <code>cd robotics</code> in T7?']
+ ],
+ R:[
+  ['R1','Convert binary <code>1011</code> to decimal.'],
+  ['R2','Convert binary <code>110</code> to decimal.'],
+  ['R3','Convert decimal <code>12</code> to binary.'],
+  ['R4','Convert octal <code>21</code> to decimal.'],
+  ['R5','Convert decimal <code>50</code> to octal.'],
+  ['R6','How many different values can 3 bits hold? What is the largest, in decimal?']
+ ],
+ D:[
+  ['D1','Convert the bits <code>111 101 000</code> to a three-digit octal permission number.'],
+  ['D2','Convert the bits <code>110 100 100</code> to an octal permission number.'],
+  ['D3','Write <code>rwxr-xr-x</code> as a number.'],
+  ['D4','Write <code>rw-rw-r--</code> as a number.'],
+  ['D5','Write <code>640</code> as letters.'],
+  ['D6','Write <code>543</code> as letters. (This one is from the CED.)'],
+  ['D7','Write <code>711</code> as letters.'],
+  ['D8','Which single digit means read + write? Which means write + execute?'],
+  ['D9','From <b>your</b> terminal: write the permission number for <code>notes.txt</code>, <code>scanner</code>, <code>robotics</code>, and <code>robotics/motor_test.py</code>.']
+ ],
+ E:[
+  ['E1','Write the command that gives a file named <code>test</code>: owner read, write, execute; group read and execute; others nothing.'],
+  ['E2','Write the command that gives <code>report.txt</code>: owner read and write; group read only; others nothing.'],
+  ['E3','What does <code>chmod 777 test</code> do? Give one reason it is risky.'],
+  ['E4','In plain English, what does <code>chmod 600 diary.txt</code> do?'],
+  ['E5','A program is <code>755</code>. Write a numeric chmod command that removes all access for others and leaves the owner and group the same.'],
+  ['E6','From <b>your</b> terminal: what did <code>ls -l grades.xlsx</code> show before and after <code>chmod 640</code>?'],
+  ['E7','What happened when Sam tried <code>chmod 777 grades.xlsx</code>? Why?'],
+  ['E8','After <code>chmod 600 notes.txt</code>, what happened when Leo ran <code>cat notes.txt</code>? Why, when he could read it before?']
+ ],
+ F:[
+  ['F1','Write the command that adds read and execute for the user owner and the group on <code>testfile</code>.'],
+  ['F2','Write the command that removes write from others on <code>notes.txt</code>.'],
+  ['F3','Write the command that gives everyone execute on <code>run.sh</code>.'],
+  ['F4','<code>notes.txt</code> is <code>rw-r--r--</code> (644). After <code>chmod g+w notes.txt</code>, what are the new letters and number?'],
+  ['F5','A file is <code>777</code>. After <code>chmod go-w file</code>, what is the new number?'],
+  ['F6','A classmate says <code>chmod o+rwx file</code> gives the owner full access. Explain the mistake.'],
+  ['F7','When would you choose the symbolic method (letters) instead of the numeric method? Give one reason.'],
+  ['F8','From <b>your</b> terminal: after <code>chmod g+w</code> and then <code>chmod o-r</code> on notes.txt, what were its letters and number?'],
+  ['F9','After <code>chmod u-r notes.txt</code>, could Maya <code>cat</code> her own file? Why not, if the group still had read?']
+ ],
+ G:[
+  ['G1','<b>Mission 1.</b> Write the code word. Then write the permissions of <code>grades.xlsx</code> in letters and as a number.'],
+  ['G2','<b>Mission 2.</b> Write the code word and the exact command you used.'],
+  ['G3','<b>Mission 3.</b> Write the code word, the exact error message, and why Sam got it.'],
+  ['G4','<b>Mission 4.</b> Write the code word and the new letters and number for <code>notes.txt</code>.'],
+  ['G5','<b>Mission 5.</b> Write the code word and the command(s) you used.'],
+  ['G6','<b>Mission 6.</b> Write the code word, the error message, and why Leo got it.'],
+  ['G7','<b>Mission 7.</b> Write the code word. Who has extra access to <code>budget.xlsx</code>, and what can they do?'],
+  ['G8','<b>Bonus mission.</b> Write the code word. Leo owns <code>draft.txt</code> and is in group lab, which has <code>rw-</code>. Why was he still denied?']
+ ],
+ H:[
+  ['H1','This file holds every staff member\'s salary. What is the risk? Write a chmod command that fixes it.'+L('-rwxrwxrwx 1 admin staff 8192 Oct 30 14:02 payroll.xlsx')],
+  ['H2','This file lists students\' medications. Only the nurse (owner) and the health office group should read it. What is the risk? Write the fix.'+L('-rw-r--r-- 1 nurse health 1024 Oct 30 14:02 student_meds.txt')],
+  ['H3','Everyone in the staff group needs to <b>run</b> this backup script, but nobody else should. What\'s wrong? Write the fix.'+L('-rwx------ 1 admin staff 2048 Oct 30 14:02 backup.sh')],
+  ['H4','AP style. Which command gives the owner full access, the group read only, and others no access?<span class="ch">(A) chmod 740 file &nbsp; (B) chmod 704 file &nbsp; (C) chmod 760 file &nbsp; (D) chmod 470 file</span>'],
+  ['H5','AP style. After <code>chmod 543 test</code>, which statement is true?<span class="ch">(A) Others can write and execute. (B) The group can read and write. (C) The owner can write. (D) Others have no access.</span>'],
+  ['H6','Exit question. In your own words, what is the difference between the numeric and symbolic methods? Give one example command of each.']
+ ]
+};
+document.querySelectorAll('.probs').forEach(el=>{
+  const sec=el.dataset.sec, list=PROBS[sec];
+  el.innerHTML=`<div class="head"><h3>On your answer sheet</h3><span>Section ${sec} · ${list.length} questions</span></div><ol>`+list.map(([n,q])=>`<li><span class="n">${n}</span><div>${q}</div></li>`).join('')+'</ol>';
+});
+
+/* ====================== QUICK CHECKS ====================== */
+document.querySelectorAll('.qc').forEach(qc=>{
+  const fb=qc.querySelector('.fb');
+  qc.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+    qc.querySelectorAll('button').forEach(x=>x.classList.remove('right','wrong'));
+    const ok=b.dataset.v===qc.dataset.ans;
+    b.classList.add(ok?'right':'wrong');
+    fb.innerHTML=ok?fb.dataset.right:fb.dataset.wrong;
+  }));
+});
+
+/* ====================== HELPERS ====================== */
+const RWX=b=>(b&4?'r':'-')+(b&2?'w':'-')+(b&1?'x':'-');
+const modeStr=m=>RWX(m>>6&7)+RWX(m>>3&7)+RWX(m&7);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function stripHTML(type,m,lit){
+  const parts=[RWX(m>>6&7),RWX(m>>3&7),RWX(m&7)], cls=['u','g','o'];
+  return `<div class="strip${lit!=null?' lit':''}"><span class="t">${type}</span>`+parts.map((p,i)=>`<span class="${cls[i]}${lit===i?' hot':''}">${p}</span>`).join('')+`</div>`;
+}
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}};
+
+/* ====================== STATION P: READER ====================== */
+const RD_FILES=[
+  {name:'report.txt',type:'-',mode:0o640,size:2048},
+  {name:'scanner',type:'-',mode:0o775,size:16384},
+  {name:'robotics',type:'d',mode:0o750,size:4096},
+  {name:'notes.txt',type:'-',mode:0o644,size:512}
+];
+const RD_PEOPLE=[{n:'Maya',u:'maya',lab:true},{n:'Leo',u:'leo',lab:true},{n:'Sam',u:'sam',lab:false}];
+let rdF=0,rdP=1;
+function words(b,dir){
+  const can=[],cant=[];
+  const names=dir?['list what\'s inside','add or delete files in it','enter it with cd']:['read it','change it','run it'];
+  [4,2,1].forEach((v,i)=>(b&v?can:cant).push(names[i]));
+  if(!can.length) return 'can\'t do anything with it';
+  return 'can '+can.join(' and ')+(cant.length?', but can\'t '+cant.join(' or '):'');
+}
+function renderReader(){
+  const f=RD_FILES[rdF], p=RD_PEOPLE[rdP];
+  document.getElementById('rdFiles').innerHTML=RD_FILES.map((x,i)=>`<button class="btn${i===rdF?' sel':''}" data-f="${i}">${x.name}${x.type==='d'?'/':''}</button>`).join('');
+  document.getElementById('rdPeople').innerHTML='<span style="color:var(--muted);font-size:.9rem;margin-right:4px">Who is asking?</span>'+RD_PEOPLE.map((x,i)=>`<button class="btn${i===rdP?' sel':''}" data-p="${i}">${x.n}</button>`).join('');
+  document.getElementById('rdLine').textContent=`${f.type}${modeStr(f.mode)} ${f.type==='d'?2:1} maya lab ${String(f.size).padStart(5)} Oct 30 14:02 ${f.name}`;
+  const chunk=p.u==='maya'?0:(p.lab?1:2);
+  const b=chunk===0?f.mode>>6&7:chunk===1?f.mode>>3&7:f.mode&7;
+  const why=[`${p.n} owns the file, so ${p.n} uses the <b class="c-u">owner</b> chunk.`,`${p.n} isn't the owner but is in group <code>lab</code>, so ${p.n} uses the <b class="c-g">group</b> chunk.`,`${p.n} isn't the owner and isn't in <code>lab</code>, so ${p.n} uses the <b class="c-o">others</b> chunk.`][chunk];
+  document.getElementById('rdStrip').innerHTML=stripHTML(f.type,f.mode,chunk);
+  document.getElementById('rdExplain').innerHTML=`<b>Step 1.</b> ${why}<br><b>Step 2.</b> That chunk is <code>${RWX(b)}</code>, so ${p.n} ${words(b,f.type==='d')}.`;
+}
+document.getElementById('reader').addEventListener('click',e=>{
+  const t=e.target.closest('button'); if(!t) return;
+  if(t.dataset.f) rdF=+t.dataset.f; if(t.dataset.p) rdP=+t.dataset.p; renderReader();
+});
+renderReader();
+
+/* ====================== STATION R: BITS + OCTAL ====================== */
+let bitVal=13;
+function renderBits(){
+  const places=[128,64,32,16,8,4,2,1];
+  document.getElementById('bits').innerHTML=places.map(p=>`<div class="bit"><button class="${bitVal&p?'on':''}" data-p="${p}" aria-pressed="${!!(bitVal&p)}" aria-label="${p}s place">${bitVal&p?1:0}</button><small>${p}</small></div>`).join('');
+  const on=places.filter(p=>bitVal&p);
+  document.getElementById('bitOut').innerHTML=`${bitVal.toString(2).padStart(8,'0')} → ${on.length?on.join(' + '):'0'} = ${bitVal}`;
+}
+document.getElementById('bits').addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return; bitVal^=+b.dataset.p; renderBits();});
+renderBits();
+let oc=5;
+function renderOc(){
+  const o=oc.toString(8), d=o.split('').map(Number), pl=[64,8,1].slice(3-d.length);
+  document.getElementById('ocOut').innerHTML=`<dt>Decimal</dt><dd>${oc}</dd><dt>Octal</dt><dd>${o}</dd><dt>Check</dt><dd>${d.map((x,i)=>`${x}×${pl[i]}`).join(' + ')} = ${oc}</dd><dt>Binary</dt><dd>${oc.toString(2)}</dd>`;
+}
+document.getElementById('ocUp').onclick=()=>{if(oc<511)oc++;renderOc();};
+document.getElementById('ocDown').onclick=()=>{if(oc>0)oc--;renderOc();};
+document.getElementById('ocReset').onclick=()=>{oc=5;renderOc();};
+renderOc();
+
+/* ====================== STATION D ====================== */
+document.getElementById('digitTable').innerHTML=[0,1,2,3,4,5,6,7].map(d=>{
+  const names=[];if(d&4)names.push('read');if(d&2)names.push('write');if(d&1)names.push('execute');
+  return `<tr><td><b>${d}</b></td><td class="mono">${d.toString(2).padStart(3,'0')}</td><td class="mono">${RWX(d)}</td><td class="l">${names.length?names.join(' + '):'no access'}</td></tr>`;}).join('');
+let pbMode=0o750;
+function renderPB(){
+  const rows=[['owner','u',6],['group','g',3],['others','o',0]];
+  document.getElementById('pb').innerHTML=rows.map(([w,c,sh])=>{
+    const b=pbMode>>sh&7;
+    return `<span class="who c-${c}">${w}</span>`+[[4,'r'],[2,'w'],[1,'x']].map(([v,l])=>`<button class="${c}${b&v?' on':''}" data-sh="${sh}" data-v="${v}" aria-pressed="${!!(b&v)}" aria-label="${w} ${l}">${b&v?l:'-'}</button>`).join('')+`<span class="sum">= ${b}</span>`;
+  }).join('');
+  const ms=modeStr(pbMode), o=pbMode.toString(8).padStart(3,'0');
+  document.getElementById('pbOut').innerHTML=`<dt>Letters</dt><dd><span class="c-u">${ms.slice(0,3)}</span><span class="c-g">${ms.slice(3,6)}</span><span class="c-o">${ms.slice(6)}</span></dd><dt>Bits</dt><dd>${[6,3,0].map(s=>(pbMode>>s&7).toString(2).padStart(3,'0')).join(' ')}</dd><dt>Octal</dt><dd>${o}</dd><dt>Command</dt><dd>chmod ${o} file</dd>`;
+}
+document.getElementById('pb').addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return; pbMode^=(+b.dataset.v)<<(+b.dataset.sh); renderPB();});
+renderPB();
+
+/* ====================== LINUX SIMULATOR ENGINE ====================== */
+const USERS={root:{uid:0,groups:['root']},maya:{uid:1001,groups:['maya','lab']},leo:{uid:1002,groups:['leo','lab']},sam:{uid:1003,groups:['sam','students']}};
+const GIDS={root:0,maya:1001,leo:1002,sam:1003,lab:2001,students:2002};
+function freshFS(){
+  const f=(name,mode,owner,size,content,extra={})=>Object.assign({name,type:'-',mode,owner,group:'lab',size,content},extra);
+  return {
+    '/home/lab':{name:'lab',type:'d',mode:0o755,owner:'maya',group:'lab',size:4096,children:['budget.xlsx','draft.txt','grades.xlsx','notes.txt','report.txt','robotics','scanner']},
+    '/home/lab/report.txt':f('report.txt',0o640,'maya',2048,'Lab Report: Network Scan\nDevices found: 3\nOpen ports: 22, 80, 443\nRecommendation: close port 22 on the lab printer.'),
+    '/home/lab/grades.xlsx':f('grades.xlsx',0o777,'maya',8192,'[spreadsheet] Period 3 grades\nJordan  A\nLeo     A-\nSam     B+'),
+    '/home/lab/notes.txt':f('notes.txt',0o644,'maya',512,'Meeting notes: robotics team meets Thursday after school.'),
+    '/home/lab/scanner':f('scanner',0o775,'maya',16384,'\u007fELF (binary program)',{program:'Scanning lab network...\n  192.168.1.10  printer\n  192.168.1.22  robot-pi\n  192.168.1.40  teacher-pc\nScan complete: 3 devices.'}),
+    '/home/lab/budget.xlsx':f('budget.xlsx',0o640,'maya',4096,'[spreadsheet] Robotics club budget\nMotors   $120\nSensors  $85\nTotal    $205',{acl:[{user:'sam',perm:4}]}),
+    '/home/lab/draft.txt':f('draft.txt',0o064,'leo',300,'Leo\'s draft essay: Why passwords alone are not enough.'),
+    '/home/lab/robotics':{name:'robotics',type:'d',mode:0o750,owner:'maya',group:'lab',size:4096,children:['motor_test.py']},
+    '/home/lab/robotics/motor_test.py':f('motor_test.py',0o750,'maya',900,'# motor_test.py\nprint("Spinning motor A... OK")',{program:'Spinning motor A... OK\nSpinning motor B... OK',script:true})
+  };
+}
+class Shell{
+  constructor(){this.reset();}
+  reset(){this.fs=freshFS();this.user='maya';this.cwd='/home/lab';this.stack=[];this.events=[];this.suNote=false;}
+  prompt(){return `${this.user}@cyberlab:${this.cwd.replace('/home/lab','~/lab')}${this.user==='root'?'#':'$'} `;}
+  inGroup(g){return USERS[this.user].groups.includes(g);}
+  bits(n){
+    if(n.owner===this.user) return n.mode>>6&7;
+    if(n.acl){const a=n.acl.find(e=>e.user===this.user); if(a) return a.perm;}
+    if(this.inGroup(n.group)) return n.mode>>3&7;
+    return n.mode&7;
+  }
+  can(n,bit){
+    if(this.user==='root') return bit===1 ? (n.type==='d'||(n.mode&0o111)!==0) : true;
+    return (this.bits(n)&bit)!==0;
+  }
+  // resolve path -> {path,node} or {err}
+  resolve(arg){
+    let parts=arg.startsWith('/')?[]:this.cwd.split('/').filter(Boolean);
+    if(arg==='~'||arg.startsWith('~/')){parts=['home','lab'];arg=arg.slice(2);}
+    for(const seg of arg.split('/').filter(Boolean)){
+      if(seg==='.') continue;
+      if(seg==='..'){parts.pop();continue;}
+      const dirPath='/'+parts.join('/');
+      const dir=this.fs[dirPath];
+      if(dir&&dir.type==='d'&&dirPath!=='/home/lab'&&!this.can(dir,1)) return {err:'denied',path:dirPath};
+      parts.push(seg);
+    }
+    const path='/'+parts.join('/');
+    return {path,node:this.fs[path]};
+  }
+  lsLine(n){
+    const t=n.type==='d'?'d':'-';
+    return {plain:`${t}${modeStr(n.mode)}${n.acl?'+':' '} ${n.type==='d'?2:1} ${n.owner.padEnd(4)} ${n.group.padEnd(4)} ${String(n.size).padStart(5)} Oct 30 14:02 `,name:n.name,dir:n.type==='d'};
+  }
+  run(line){
+    const out=[]; // [text, cls]
+    const say=(t,c='')=>out.push([t,c]);
+    const ev={user:this.user,line,cmd:'',args:[],denied:false,notPermitted:false,ok:false};
+    line=line.trim();
+    if(!line){return {out,ev};}
+    // redirection for echo
+    let redir=null;
+    const m=line.match(/^(.*?)\s*(>>|>)\s*(\S+)\s*$/);
+    if(m&&/^echo\b/.test(m[1])){redir={op:m[2],file:m[3]};line=m[1];}
+    const argv=line.match(/"[^"]*"|'[^']*'|\S+/g).map(a=>a.replace(/^["']|["']$/g,''));
+    const cmd=argv[0], args=argv.slice(1);
+    ev.cmd=cmd; ev.args=args;
+    const need=(name)=>{
+      const r=this.resolve(name);
+      if(r.err==='denied'){say(`${cmd}: cannot access '${name}': Permission denied`,'e');ev.denied=true;return null;}
+      if(!r.node){say(`${cmd}: cannot access '${name}': No such file or directory`,'e');return null;}
+      ev.target=r.path; return r;
+    };
+    switch(cmd){
+      case 'help':
+        say('Commands in this practice terminal:','n');
+        [['ls / ls -l [name]','list files (-l shows permissions)'],['cat FILE','show what\'s inside a file (needs r)'],['echo TEXT >> FILE','add a line to a file (needs w)'],['./PROGRAM','run a program (needs x)'],['chmod 640 FILE','change permissions, numeric method'],['chmod g+w FILE','change permissions, symbolic method'],['getfacl FILE','show extra permissions (the + files)'],['su NAME','switch user: maya, leo, sam, root'],['exit','go back to the previous user'],['whoami / id / groups','who am I, what groups am I in'],['cd DIR / pwd','move into a folder / show where you are'],['clear','clear the screen']].forEach(([a,b])=>say('  '+a.padEnd(22)+b));
+        ev.ok=true; break;
+      case 'clear': ev.ok=true; ev.cwd=this.cwd; ev.userAfter=this.user; this.events.push(ev); return {out:[],ev,clear:true};
+      case 'whoami': say(this.user); ev.ok=true; break;
+      case 'groups': say(USERS[this.user].groups.join(' ')); ev.ok=true; break;
+      case 'id': {const u=USERS[this.user]; say(`uid=${u.uid}(${this.user}) gid=${u.uid}(${u.groups[0]}) groups=`+u.groups.map(g=>`${GIDS[g]}(${g})`).join(',')); ev.ok=true; break;}
+      case 'pwd': say(this.cwd); ev.ok=true; break;
+      case 'cd': {
+        const r=need(args[0]||'/home/lab'); if(!r) break;
+        if(r.node.type!=='d'){say(`bash: cd: ${args[0]}: Not a directory`,'e');break;}
+        if(!r.path.startsWith('/home/lab')){say(`bash: cd: ${args[0]}: this lab stays inside /home/lab`,'e');break;}
+        if(r.path!=='/home/lab'&&!this.can(r.node,1)){say(`bash: cd: ${args[0]}: Permission denied`,'e');ev.denied=true;break;}
+        this.cwd=r.path; ev.ok=true; break;}
+      case 'ls': {
+        const flags=args.filter(a=>a.startsWith('-')).join(''); const long=flags.includes('l');
+        if(flags.replace(/[-la]/g,'')){say(`ls: invalid option -- '${flags.replace(/[-la]/g,'')[0]}'`,'e');break;}
+        ev.long=long;
+        const names=args.filter(a=>!a.startsWith('-'));
+        const target=names[0]||'.';
+        const r=need(target); if(!r) break;
+        let list;
+        if(r.node.type==='d'){
+          if(!this.can(r.node,4)){say(`ls: cannot open directory '${target}': Permission denied`,'e');ev.denied=true;break;}
+          list=r.node.children.map(c=>this.fs[r.path+'/'+c]);
+          if(long) say('total '+list.reduce((s,n)=>s+Math.ceil(n.size/1024),0));
+        } else list=[r.node];
+        list.forEach(n=>{
+          if(long){const l=this.lsLine(n); out.push([l.plain,'',[n.name,n.dir?'d':'']]);}
+          else out.push(['','',[n.name,n.type==='d'?'d':'']]);
+        });
+        ev.ok=true; break;}
+      case 'cat': {
+        if(!args[0]){say('cat: missing file name','e');break;}
+        const r=need(args[0]); if(!r) break;
+        if(r.node.type==='d'){say(`cat: ${args[0]}: Is a directory`,'e');break;}
+        if(!this.can(r.node,4)){say(`cat: ${args[0]}: Permission denied`,'e');ev.denied=true;break;}
+        say(r.node.content); ev.ok=true; break;}
+      case 'echo': {
+        const text=args.join(' ');
+        if(!redir){say(text);ev.ok=true;break;}
+        ev.cmd='write';
+        const r=this.resolve(redir.file);
+        if(r.err){say(`bash: ${redir.file}: Permission denied`,'e');ev.denied=true;break;}
+        if(r.node){
+          if(r.node.type==='d'){say(`bash: ${redir.file}: Is a directory`,'e');break;}
+          ev.target=r.path;
+          if(!this.can(r.node,2)){say(`bash: ${redir.file}: Permission denied`,'e');ev.denied=true;break;}
+          r.node.content=redir.op==='>>'?r.node.content+'\n'+text:text; r.node.size=r.node.content.length; ev.ok=true;
+        } else {
+          const dirPath=r.path.slice(0,r.path.lastIndexOf('/'))||'/'; const dir=this.fs[dirPath];
+          if(!dir||!this.can(dir,2)){say(`bash: ${redir.file}: Permission denied`,'e');ev.denied=true;break;}
+          const name=r.path.slice(r.path.lastIndexOf('/')+1);
+          this.fs[r.path]={name,type:'-',mode:0o644,owner:this.user,group:this.inGroup('lab')?'lab':USERS[this.user].groups[0],size:text.length,content:text};
+          dir.children.push(name); dir.children.sort(); ev.ok=true;
+        }
+        break;}
+      case 'chmod': {
+        if(args[0]==='--help'){say('Usage: chmod MODE FILE\n  numeric:  chmod 750 test     (owner, group, others)\n  symbolic: chmod ug+rx test   (u g o a, + or -, r w x)','n');ev.ok=true;break;}
+        if(args.length<2){say(args.length?`chmod: missing operand after '${args[0]}'`:'chmod: missing operand','e');say("Try 'chmod --help' for more information.",'n');break;}
+        const mode=args[0]; let fn=null;
+        if(/^[0-7]{3,4}$/.test(mode)){const v=parseInt(mode.slice(-3),8); fn=()=>v; ev.method='numeric';}
+        else if(/^([ugoa]*[+\-=][rwx]*)(,[ugoa]*[+\-=][rwx]*)*$/.test(mode)){
+          ev.method='symbolic';
+          fn=(cur)=>{ let m=cur; for(const clause of mode.split(',')){
+            const [,who,op,what]=clause.match(/^([ugoa]*)([+\-=])([rwx]*)$/);
+            const ws=(!who||who.includes('a'))?'ugo':who;
+            const pb=(what.includes('r')?4:0)|(what.includes('w')?2:0)|(what.includes('x')?1:0);
+            for(const w of ws){const sh={u:6,g:3,o:0}[w]; if(op==='+')m|=pb<<sh; else if(op==='-')m&=~(pb<<sh); else m=(m&~(7<<sh))|(pb<<sh);} } return m;};
+        } else {say(`chmod: invalid mode: '${mode}'`,'e');say("Try 'chmod --help' for more information.",'n');ev.badMode=true;break;}
+        let any=false;
+        for(const name of args.slice(1)){
+          const r=need(name); if(!r) continue;
+          if(this.user!=='root'&&r.node.owner!==this.user){say(`chmod: changing permissions of '${name}': Operation not permitted`,'e');ev.notPermitted=true;continue;}
+          r.node.mode=fn(r.node.mode); any=true; ev.newMode=r.node.mode;
+        }
+        ev.ok=any; break;}
+      case 'getfacl': {
+        if(!args[0]){say('getfacl: missing file name','e');break;}
+        const r=need(args[0]); if(!r) break; const n=r.node;
+        say(`# file: ${r.path.replace('/home/lab/','')}\n# owner: ${n.owner}\n# group: ${n.group}\nuser::${RWX(n.mode>>6&7)}`);
+        (n.acl||[]).forEach(a=>say(`user:${a.user}:${RWX(a.perm)}`,'okk'));
+        say(`group::${RWX(n.mode>>3&7)}`);
+        if(n.acl) say(`mask::${RWX((n.mode>>3&7)|n.acl.reduce((s,a)=>s|a.perm,0))}`);
+        say(`other::${RWX(n.mode&7)}`); ev.ok=true; break;}
+      case 'su': {
+        const who=args.filter(a=>a!=='-')[0]||'root';
+        if(!USERS[who]){say(`su: user ${who} does not exist`,'e');break;}
+        this.stack.push(this.user); this.user=who; this.cwd='/home/lab';
+        say(`(You are now ${who}. A real system would ask for ${who}'s password. Type exit to go back to ${this.stack[this.stack.length-1]}.)`,'n');
+        ev.ok=true; break;}
+      case 'exit': case 'logout':
+        if(this.stack.length){this.user=this.stack.pop();this.cwd='/home/lab';ev.ok=true;} else say('You\'re already back to Maya. (Nothing to exit.)','n');
+        break;
+      case 'sudo': say(`${this.user} is not in the sudoers file. This incident will be reported.`,'e'); say('(Least privilege in action. Try "su root" in this practice lab instead.)','n'); break;
+      case 'rm': case 'rmdir': case 'mv': case 'cp': say(`${cmd} is turned off in this practice lab so nobody loses files.`,'n'); break;
+      case 'man': say('Short version: type "help" for every command, or "chmod --help".','n'); break;
+      default: {
+        if(cmd.includes('/')){
+          const r=this.resolve(cmd);
+          if(r.err||!r.node){say(`bash: ${cmd}: ${r.err?'Permission denied':'No such file or directory'}`,'e'); if(r.err)ev.denied=true; break;}
+          ev.cmd='run'; ev.target=r.path;
+          if(r.node.type==='d'){say(`bash: ${cmd}: Is a directory`,'e');break;}
+          if(!this.can(r.node,1)||(r.node.script&&!this.can(r.node,4))){say(`bash: ${cmd}: Permission denied`,'e');ev.denied=true;break;}
+          if(!r.node.program){say(`(${r.node.name} is a text file, not a program, so there's nothing to run.)`,'n');break;}
+          say(r.node.program,'okk'); ev.ok=true; break;
+        }
+        const r=this.resolve(cmd);
+        if(r.node&&r.node.program){say(`bash: ${cmd}: command not found`,'e');say(`(To run a program in this folder, type ./${cmd})`,'n');break;}
+        ev.notFound=true; say(`bash: ${cmd}: command not found`,'e'); say('(Check the spelling and capitals. Type help to see what works here.)','n');
+      }
+    }
+    ev.cwd=this.cwd; ev.userAfter=this.user;
+    this.events.push(ev);
+    return {out,ev};
+  }
+}
+
+/* ====================== TERMINAL RENDERING ====================== */
+function outHTML(out){
+  return out.map(([t,c,name])=>{
+    let h=`<span class="${c}">${esc(t)}</span>`;
+    if(name) h+=`<span class="${name[1]}">${esc(name[0])}</span>`;
+    return h;
+  }).join('\n');
+}
+// ls (short) puts names on one line
+function formatOut(res){
+  const o=res.out;
+  if(res.ev.cmd==='ls'&&!res.ev.long&&o.length&&o.every(x=>x[2])) return o.map(x=>`<span class="${x[2][1]}">${esc(x[2][0])}</span>`).join('  ');
+  return outHTML(o);
+}
+
+
+
+/* ====================== TERMINAL RENDERING ====================== */
+function outHTML(out){
+  return out.map(([t,c,name])=>{
+    let h=`<span class="${c}">${esc(t)}</span>`;
+    if(name) h+=`<span class="${name[1]}">${esc(name[0])}</span>`;
+    return h;
+  }).join('\n');
+}
+function formatOut(res){
+  const o=res.out;
+  if(res.ev.cmd==='ls'&&!res.ev.long&&o.length&&o.every(x=>x[2])) return o.map(x=>`<span class="${x[2][1]}">${esc(x[2][0])}</span>`).join('  ');
+  return outHTML(o);
+}
+const WHO=[['maya','c-u','maya, lab','team captain'],['leo','c-g','leo, lab','teammate'],['sam','c-o','sam, students','not on team'],['root','','root','IT admin']];
+function renderWho(el,u){ if(!el) return; el.innerHTML=`<span class="wb-l">Who's who</span>`+WHO.map(([n,c,g,r])=>`<div class="wb${n===u?' on':''}"><b class="${c}">${n}</b><small>${r} · groups: ${g}</small>${n===u?'<em>you</em>':''}</div>`).join(''); }
+/* interactive terminal: returns {sh, focus, reset} */
+function createTerminal(termEl,{id,title,welcome,onEvent,who}){
+  const sh=new Shell(); let input=null, hist=[], hi=0;
+  termEl.innerHTML=`<div class="bar"><span>${esc(title)}</span><button type="button">Reset files</button></div><div class="scr"></div>`;
+  const scr=termEl.querySelector('.scr');
+  const row=()=>{
+    const r=document.createElement('div'); r.className='inrow';
+    r.innerHTML=`<span class="p">${esc(sh.prompt())}</span><input id="${id}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Type a command">`;
+    scr.appendChild(r); input=r.querySelector('input'); input.addEventListener('keydown',key);
+  };
+  const line=(html)=>{const d=document.createElement('div');d.innerHTML=html;scr.appendChild(d);};
+  function key(e){
+    if(e.key==='ArrowUp'){if(hi>0){hi--;input.value=hist[hi];}e.preventDefault();return;}
+    if(e.key==='ArrowDown'){if(hi<hist.length){hi++;input.value=hist[hi]||'';}e.preventDefault();return;}
+    if(e.key!=='Enter') return;
+    const text=input.value, p=sh.prompt(); input.parentElement.remove();
+    if(text.trim()) hist.push(text); hi=hist.length;
+    const res=sh.run(text);
+    if(res.clear){scr.innerHTML='';}
+    else { const o=formatOut(res); line(`<span class="p">${esc(p)}</span>${esc(text)}`+(o?'\n'+o:'')); }
+    if(res.ev.cmd&&onEvent){ const msgs=onEvent(res.ev,sh)||[]; msgs.forEach(m=>line(`<span class="okk">${m}</span>`)); }
+    row(); input.focus(); scr.scrollTop=scr.scrollHeight; renderWho(who,sh.user);
+  }
+  const boot=()=>{scr.innerHTML=''; line(`<span class="n">${esc(welcome)}</span>`); row(); renderWho(who,sh.user);};
+  termEl.querySelector('.bar button').onclick=()=>{sh.reset();boot();input.focus();};
+  termEl.addEventListener('click',e=>{if(e.target.tagName!=='BUTTON'&&!String(getSelection())) input&&input.focus({preventScroll:true});});
+  boot();
+  return {sh,focus:()=>input&&input.focus({preventScroll:true})};
+}
+
+/* ====================== GUIDED PRACTICE ====================== */
+const T=(p)=>'/home/lab/'+p;
+const chmodded=(s,file,method,pred)=>s.events.some(x=>x.cmd==='chmod'&&x.target===T(file)&&x.ok&&(!method||x.method===method)&&(!pred||pred(x)));
+const TASKS={
+ t1:[
+  {t:'Type <code>whoami</code> and press Enter. Who are you?',sheet:'T1',c:e=>e.cmd==='whoami'&&e.user==='maya'},
+  {t:'Type <code>pwd</code>. Which folder are you in?',sheet:'T2',c:e=>e.cmd==='pwd'&&e.cwd==='/home/lab'},
+  {t:'Type <code>ls</code> to list what\'s in this folder. Folders show in blue.',sheet:'T3',c:e=>e.cmd==='ls'&&e.ok&&!e.long&&e.cwd==='/home/lab'},
+  {t:'Read a file: <code>cat notes.txt</code> (space between cat and the name)',c:e=>e.cmd==='cat'&&e.ok&&e.target===T('notes.txt')},
+  {t:'Make a mistake on purpose: type <code>whomai</code> (misspelled).',sheet:'T4',c:e=>e.notFound},
+  {t:'Fix it: press <kbd>↑</kbd> to bring it back, correct the spelling, press Enter.',c:(e,s)=>e.cmd==='whoami'&&s.events.some(x=>x.notFound)},
+  {t:'Wipe the screen: <code>clear</code>',c:e=>e.cmd==='clear'}
+ ],
+ t2:[
+  {t:'Where are you now? <code>pwd</code>',c:e=>e.cmd==='pwd'&&e.cwd==='/home/lab'},
+  {t:'Go into the folder: <code>cd robotics</code>. It prints nothing. Look at the prompt.',c:e=>e.cmd==='cd'&&e.ok&&e.cwd===T('robotics')},
+  {t:'Prove where you are: <code>pwd</code>',sheet:'T5',c:e=>e.cmd==='pwd'&&e.cwd===T('robotics')},
+  {t:'See what\'s inside: <code>ls</code>',c:e=>e.cmd==='ls'&&e.ok&&e.cwd===T('robotics')},
+  {t:'Go back up one folder: <code>cd ..</code> (cd, space, two dots)',sheet:'T6',c:e=>e.cmd==='cd'&&e.ok&&e.args[0]==='..'&&e.cwd==='/home/lab'},
+  {t:'Check you\'re back: <code>pwd</code>',c:(e,s)=>e.cmd==='pwd'&&e.cwd==='/home/lab'&&s.events.some(x=>x.cmd==='cd'&&x.args[0]==='..'&&x.ok)}
+ ],
+ t3:[
+  {t:'As Maya, see your groups: <code>id</code>. Find the word <code>lab</code>.',sheet:'T7',c:e=>e.cmd==='id'&&e.user==='maya'},
+  {t:'Become Leo: <code>su leo</code>. Watch the prompt and the Who\'s who bar.',c:e=>e.cmd==='su'&&e.ok&&e.userAfter==='leo'},
+  {t:'Double-check: <code>whoami</code>',c:e=>e.cmd==='whoami'&&e.user==='leo'},
+  {t:'Leo\'s groups: <code>id</code>. Is he in lab too?',sheet:'T8',c:e=>e.cmd==='id'&&e.user==='leo'},
+  {t:'Go back to Maya: <code>exit</code>',c:e=>e.cmd==='exit'&&e.ok&&e.userAfter==='maya'},
+  {t:'Become Sam: <code>su sam</code>, then <code>id</code>. Is Sam in lab?',sheet:'T8',c:e=>e.cmd==='id'&&e.user==='sam'},
+  {t:'As Sam, try to enter the team folder: <code>cd robotics</code>',sheet:'T9',c:e=>e.cmd==='cd'&&e.user==='sam'&&e.denied},
+  {t:'Go back to Maya: <code>exit</code>, then <code>whoami</code>',c:(e,s)=>e.cmd==='whoami'&&e.user==='maya'&&s.events.some(x=>x.cmd==='exit'&&x.ok&&x.user==='sam')}
+ ],
+ p1:[
+  {t:'As Maya, list everything with permissions: <code>ls -l</code>',sheet:'P2',c:e=>e.cmd==='ls'&&e.long&&e.ok&&e.target==='/home/lab'},
+  {t:'Look at one file only: <code>ls -l report.txt</code>',c:e=>e.cmd==='ls'&&e.long&&e.ok&&e.target===T('report.txt')},
+  {t:'Predict, then test: <code>su leo</code>, then <code>cat report.txt</code>',sheet:'P3',c:e=>e.cmd==='cat'&&e.user==='leo'&&e.target===T('report.txt')&&e.ok},
+  {t:'As Leo, try to change it: <code>echo hello &gt;&gt; report.txt</code>',sheet:'P4',c:e=>e.cmd==='write'&&e.user==='leo'&&e.target===T('report.txt')&&e.denied},
+  {t:'<code>exit</code>, then <code>su sam</code>, then <code>cat report.txt</code>',sheet:'P5',c:e=>e.cmd==='cat'&&e.user==='sam'&&e.target===T('report.txt')&&e.denied},
+  {t:'As Sam, run the program: <code>./scanner</code>',sheet:'P6',c:e=>e.cmd==='run'&&e.user==='sam'&&e.ok},
+  {t:'As Sam, try <code>cat budget.xlsx</code>. Surprised?',sheet:'P7',c:e=>e.cmd==='cat'&&e.user==='sam'&&e.target===T('budget.xlsx')&&e.ok},
+  {t:'Find out why: <code>getfacl budget.xlsx</code>',sheet:'P7',c:e=>e.cmd==='getfacl'&&e.target===T('budget.xlsx')&&e.ok}
+ ],
+ d1:[
+  {t:'List everything: <code>ls -l</code>. Convert notes.txt, scanner, and robotics.',sheet:'D9',c:e=>e.cmd==='ls'&&e.long&&e.ok&&e.target==='/home/lab'},
+  {t:'Look inside a folder using a path: <code>ls -l robotics/motor_test.py</code>',sheet:'D9',c:e=>e.cmd==='ls'&&e.long&&e.ok&&e.target===T('robotics/motor_test.py')}
+ ],
+ e1:[
+  {t:'Check first: <code>ls -l grades.xlsx</code>',sheet:'E6',c:e=>e.cmd==='ls'&&e.long&&e.ok&&e.target===T('grades.xlsx')},
+  {t:'Change it: <code>chmod 640 grades.xlsx</code>',c:(e,s)=>e.cmd==='chmod'&&e.method==='numeric'&&e.target===T('grades.xlsx')&&s.fs[T('grades.xlsx')].mode===0o640},
+  {t:'Check again: <code>ls -l grades.xlsx</code>',sheet:'E6',c:(e,s)=>e.cmd==='ls'&&e.long&&e.ok&&e.target===T('grades.xlsx')&&s.fs[T('grades.xlsx')].mode===0o640},
+  {t:'Test as someone else: <code>su sam</code>, then <code>cat grades.xlsx</code>',c:e=>e.cmd==='cat'&&e.user==='sam'&&e.target===T('grades.xlsx')&&e.denied},
+  {t:'As Sam, try to undo it: <code>chmod 777 grades.xlsx</code>',sheet:'E7',c:e=>e.cmd==='chmod'&&e.user==='sam'&&e.notPermitted},
+  {t:'<code>exit</code>, then make notes private: <code>chmod 600 notes.txt</code>',c:(e,s)=>e.cmd==='chmod'&&e.user==='maya'&&e.target===T('notes.txt')&&s.fs[T('notes.txt')].mode===0o600},
+  {t:'Test as Leo: <code>su leo</code>, then <code>cat notes.txt</code>',sheet:'E8',c:e=>e.cmd==='cat'&&e.user==='leo'&&e.target===T('notes.txt')&&e.denied}
+ ],
+ f1:[
+  {t:'Check first: <code>ls -l notes.txt</code>',c:e=>e.cmd==='ls'&&e.long&&e.ok&&e.target===T('notes.txt')},
+  {t:'Give the group write: <code>chmod g+w notes.txt</code>, then <code>ls -l notes.txt</code>',sheet:'F8',c:(e,s)=>e.cmd==='ls'&&e.long&&e.target===T('notes.txt')&&(s.fs[T('notes.txt')].mode&0o020)&&chmodded(s,'notes.txt','symbolic')},
+  {t:'Take read away from others: <code>chmod o-r notes.txt</code>, then <code>ls -l notes.txt</code>',sheet:'F8',c:(e,s)=>e.cmd==='ls'&&e.long&&e.target===T('notes.txt')&&!(s.fs[T('notes.txt')].mode&0o004)&&chmodded(s,'notes.txt','symbolic')},
+  {t:'Owner trap: <code>chmod u-r notes.txt</code>, then <code>cat notes.txt</code>',sheet:'F9',c:e=>e.cmd==='cat'&&e.user==='maya'&&e.target===T('notes.txt')&&e.denied},
+  {t:'Fix it: <code>chmod u+r notes.txt</code>, then <code>cat notes.txt</code>',c:(e,s)=>e.cmd==='cat'&&e.user==='maya'&&e.target===T('notes.txt')&&e.ok&&s.events.some(x=>x.cmd==='cat'&&x.denied&&x.target===T('notes.txt'))},
+  {t:'Remove execute from everyone: <code>chmod a-x scanner</code>, then <code>./scanner</code>',c:e=>e.cmd==='run'&&e.user==='maya'&&e.target===T('scanner')&&e.denied},
+  {t:'Give only the owner execute back: <code>chmod u+x scanner</code>, then run it again',c:(e,s)=>e.cmd==='run'&&e.user==='maya'&&e.target===T('scanner')&&e.ok&&s.events.some(x=>x.cmd==='run'&&x.denied)}
+ ]
+};
+const TASK_KEY='permlab-tasks-v3';
+const taskDone=store.get(TASK_KEY,{});
+document.querySelectorAll('.practice').forEach(el=>{
+  const key=el.dataset.practice, tasks=TASKS[key];
+  const done=new Set((taskDone[key]||[]).filter(i=>Number.isInteger(i)&&i>=0&&i<tasks.length));
+  el.innerHTML=`<div class="whobar"></div><div class="term"></div><div class="tasks"><div class="tk-head"><h4>Try it</h4><button type="button" class="tk-reset">Start over</button></div><div class="cnt"></div><ol></ol></div>`;
+  const ol=el.querySelector('ol'), cnt=el.querySelector('.cnt');
+  const paint=()=>{
+    const cur=tasks.findIndex((_,i)=>!done.has(i));
+    ol.innerHTML=tasks.map((t,i)=>`<li class="${done.has(i)?'done':''}${i===cur?' cur':''}"><span class="box" aria-hidden="true">${done.has(i)?'✓':''}</span><span class="tx">${t.t}${t.sheet?`<span class="sheet">→ answer sheet ${t.sheet}</span>`:''}</span></li>`).join('');
+    cnt.textContent=`${done.size} of ${tasks.length} done`+(done.size===tasks.length?'. Nice work.':'');
+  };
+  createTerminal(el.querySelector('.term'),{id:'in-'+key,who:el.querySelector('.whobar'),title:'practice terminal · '+key.toUpperCase(),
+    welcome:'Logged in as maya. Click here and type a command. Type help for the list.',
+    onEvent:(e,s)=>{let hit=false; tasks.forEach((t,i)=>{if(!done.has(i)&&t.c(e,s)){done.add(i);hit=true;}});
+      if(hit){taskDone[key]=[...done]; store.set(TASK_KEY,taskDone); paint();} return [];}});
+  el.querySelector('.tk-reset').onclick=()=>{done.clear(); taskDone[key]=[]; store.set(TASK_KEY,taskDone); el.querySelector('.term .bar button').click(); paint();};
+  paint();
+});
+
+/* ====================== DEMOS ====================== */
+const DEMOS={
+  numeric:{title:'chmod with numbers',cmds:['ls -l grades.xlsx','chmod 640 grades.xlsx','ls -l grades.xlsx','su sam','cat grades.xlsx']},
+  symbolic:{title:'two ways to get 664',cmds:['ls -l notes.txt','chmod 664 notes.txt','ls -l notes.txt','chmod 644 notes.txt','chmod g+w notes.txt','ls -l notes.txt']}
+};
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+document.querySelectorAll('.demo').forEach(el=>{
+  const d=DEMOS[el.dataset.demo];
+  el.innerHTML=`<div class="term"><div class="bar"><span>demo · ${d.title}</span><button type="button">▶ Play</button></div><div class="scr"></div></div>`;
+  const scr=el.querySelector('.scr'), btn=el.querySelector('button');
+  let token=0;
+  const full=()=>{const sh=new Shell(); return d.cmds.map(c=>{const p=sh.prompt(); const o=formatOut(sh.run(c)); return `<span class="p">${esc(p)}</span>${esc(c)}`+(o?'\n'+o:'');}).join('\n');};
+  scr.innerHTML=full();
+  btn.onclick=async()=>{
+    const my=++token; const sh=new Shell(); btn.textContent='↻ Replay';
+    if(reduce){scr.innerHTML=full();return;}
+    const sleep=ms=>new Promise(r=>setTimeout(r,ms)); let html='';
+    for(const c of d.cmds){
+      const p=sh.prompt(); html+=(html?'\n':'')+`<span class="p">${esc(p)}</span>`;
+      for(let i=1;i<=c.length;i++){ if(my!==token) return; scr.innerHTML=html+esc(c.slice(0,i))+'<span class="caret">&nbsp;</span>'; await sleep(45); }
+      html+=esc(c); scr.innerHTML=html; await sleep(350); if(my!==token) return;
+      const o=formatOut(sh.run(c)); if(o) html+='\n'+o; scr.innerHTML=html; scr.scrollTop=scr.scrollHeight; await sleep(900);
+    }
+  };
+});
+
+/* ====================== MISSIONS ====================== */
+const dec=s=>atob(s);
+const MISSIONS=[
+  {id:'G1',t:'Look around',d:'As Maya, list the lab files with their permissions.',h:'ls -l',code:'UEFDS0VU',chk:(e,s)=>e.cmd==='ls'&&e.long&&e.ok},
+  {id:'G2',t:'Lock the gradebook',d:'grades.xlsx is 777. Use the <b>numeric</b> method to make it 640.',h:'chmod 640 grades.xlsx',code:'TE9DS0RPV04=',chk:(e,s)=>e.cmd==='chmod'&&e.method==='numeric'&&e.target===T('grades.xlsx')&&s.fs[e.target].mode===0o640},
+  {id:'G3',t:'Prove it worked',d:'Show that Sam can no longer open grades.xlsx. (Do Mission 2 first.)',h:'Become Sam, then try to read the file.',code:'REVOSUVE',chk:(e,s)=>e.user==='sam'&&e.cmd==='cat'&&e.target===T('grades.xlsx')&&e.denied},
+  {id:'G4',t:'Letters only',d:'As Maya, give the group write on notes.txt using the <b>symbolic</b> method.',h:'If you\'re still Sam, exit first. Group = g, write = w.',code:'U1lNQk9M',chk:(e,s)=>e.user==='maya'&&e.cmd==='chmod'&&e.method==='symbolic'&&e.target===T('notes.txt')&&s.fs[e.target].mode===0o664},
+  {id:'G5',t:'Tighten the scanner',d:'scanner is 775. Using only the <b>symbolic</b> method, make it 750.',h:'775 → 750 means the group loses w and others lose r and x. Two changes can go in one command with a comma.',code:'VElHSFRFTg==',chk:(e,s)=>e.cmd==='chmod'&&e.method==='symbolic'&&e.target===T('scanner')&&s.fs[e.target].mode===0o750},
+  {id:'G6',t:'Not your file',d:'Show that being in the group isn\'t enough to change permissions: as Leo, try to make report.txt 777.',h:'su leo, then chmod 777 report.txt',code:'T1dORVJTSElQ',chk:(e,s)=>e.user==='leo'&&e.cmd==='chmod'&&e.target===T('report.txt')&&e.notPermitted},
+  {id:'G7',t:'The hidden +',d:'One file has a + in its permissions. Find it and show its extra permissions.',h:'ls -l, look for the +, then getfacl on that file',code:'U0hBRE9X',chk:(e,s)=>e.cmd==='getfacl'&&e.target===T('budget.xlsx')&&e.ok},
+  {id:'G8',t:'Bonus: the owner trap',d:'As Leo, try to read draft.txt. Leo owns it. Use ls -l to figure out why it fails.',h:'su leo, then cat draft.txt',code:'VFJBUERPT1I=',chk:(e,s)=>e.user==='leo'&&e.cmd==='cat'&&e.target===T('draft.txt')&&e.denied}
+];
+let mdone=store.get('permlab-done',{});
+function renderMissions(){
+  document.getElementById('missions').innerHTML=MISSIONS.map(m=>`<div class="mi${mdone[m.id]?' done':''}"><div class="top"><span class="id">${m.id}</span><span class="ti">${m.t}</span></div><p>${m.d}</p>${mdone[m.id]?`<span class="code">Code word: ${dec(m.code)}</span>`:`<details><summary>Hint</summary>${esc(m.h)}</details>`}</div>`).join('');
+  const n=Object.keys(mdone).length;
+  document.getElementById('progress').innerHTML=`<b>${n} of ${MISSIONS.length}</b> missions complete`;
+  const tag=rail.querySelector('[data-done="lab"]'); if(tag) tag.textContent=n?`${n}/8`:'';
+}
+labApi=createTerminal(document.getElementById('labTerm'),{id:'labInput',who:document.getElementById('labWho'),title:'cyberlab · mission terminal',
+  welcome:'Welcome to cyberlab. You are logged in as maya.\nType help to see the commands. Missions are on the right.',
+  onEvent:(e,s)=>{const msgs=[]; MISSIONS.forEach(m=>{if(!mdone[m.id]&&m.chk(e,s)){mdone[m.id]=true;msgs.push(`✔ Mission ${m.id} complete. Code word: ${dec(m.code)}`);}});
+    if(msgs.length){store.set('permlab-done',mdone);renderMissions();} return msgs;}});
+renderMissions();
+route();
+</script>
+
+</body>
+</html>
